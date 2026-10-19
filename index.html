@@ -784,12 +784,8 @@
     if(!("speechSynthesis" in window)) return;
     const vs = window.speechSynthesis.getVoices() || [];
     if(!vs.length) return;
-    /* natural + cute awaaz: pehle Google en-IN, phir Google en, phir en-IN, phir en-GB, phir koi bhi en */
-    ttsVoice = vs.find(v => /^en[-_]?in/i.test(v.lang) && /google/i.test(v.name))
-            || vs.find(v => /^en/i.test(v.lang) && /google/i.test(v.name) && /female|woman/i.test(v.name))
-            || vs.find(v => /^en/i.test(v.lang) && /google/i.test(v.name))
-            || vs.find(v => /^en[-_]?in/i.test(v.lang))
-            || vs.find(v => /^en[-_]?gb/i.test(v.lang))
+    /* purani wali awaaz: pehle en-IN, phir koi bhi en */
+    ttsVoice = vs.find(v => /en[-_]?in/i.test(v.lang))
             || vs.find(v => /^en/i.test(v.lang))
             || vs[0];
   }
@@ -804,8 +800,8 @@
       const u = new SpeechSynthesisUtterance(text);
       if(ttsVoice) u.voice = ttsVoice;
       u.lang = (ttsVoice && ttsVoice.lang) || "en-IN";
-      u.pitch = 1.18;    /* thoda high = cute (zyada karo to cute, kam karo to calm) */
-      u.rate  = 0.95;    /* thoda dheema = calm, "laya" mein baat */
+      u.pitch = 1.35;    /* wahi purani cute pitch */
+      u.rate  = 0.97;    /* bas thoda dheema = smooth (kam/zyada speed ke liye yahi badlo) */
       u.volume = 1;
       const tok = ++speakToken;
       speaking = true;                               /* bol raha hai → engaged */
@@ -832,7 +828,7 @@
   const heard = document.getElementById("heard");
   const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v66";
+  const APP_VER = "v67";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
