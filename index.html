@@ -823,7 +823,7 @@
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const heard = document.getElementById("heard");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v55";
+  const APP_VER = "v56";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
@@ -862,7 +862,10 @@
     if(attentive){
       for(const c of COMMANDS){ if(c.re.test(t)){ c.act(); attentive = false; dotOff(); return; } }
     }
-    if(WAKE.test(t)){ attentive = true; dotOn(); return; }
+    if(WAKE.test(t)){
+      if(!attentive) setMood(Math.random() < 0.5 ? "happy" : "excited", false);   /* wake pe khush ho jaye */
+      attentive = true; dotOn(); return;
+    }
   }
   function startListening(){
     if(!SR || recogWanted) return;
