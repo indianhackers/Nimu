@@ -532,22 +532,26 @@
     50%    { opacity:1; }
   }
 
-  /* debug: jo suna gaya (temporary) */
-  .heard{
+  /* debug (temporary) — neeche ek line: nimu kya sun raha / kya bol raha */
+  .debug{
     position:fixed;
-    top: max(2vmin, env(safe-area-inset-top));
     left:0; right:0;
-    text-align:center;
+    bottom: max(2vmin, env(safe-area-inset-bottom));
+    display:flex; flex-direction:column; gap:.3vmin;
+    align-items:center;
     color:#9fd8e6;
-    font:700 3.2vmin/1.4 system-ui,-apple-system,sans-serif;
+    font:600 2.6vmin/1.35 system-ui,-apple-system,sans-serif;
     text-shadow:0 0 1.2vmin rgba(0,0,0,.8);
     pointer-events:none;
     z-index:60;
   }
+  .debug .d-row{ display:flex; align-items:baseline; gap:1.4vmin; max-width:94vw; }
+  .debug .d-tag{ opacity:.6; text-transform:uppercase; letter-spacing:.12em; font-size:2vmin; min-width:12vmin; text-align:right; }
+  .debug .d-val{ color:#eaf7fb; max-width:76vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
   .hint{
     position:fixed;
-    bottom: max(6vmin, env(safe-area-inset-bottom));
+    bottom: max(11vmin, env(safe-area-inset-bottom));
     left:0; right:0;
     text-align:center;
     color:var(--hint);
@@ -631,7 +635,10 @@
   </div>
 
   <div class="mood-label" id="moodLabel"></div>
-  <div class="heard" id="heard">heard: —</div>
+  <div class="debug" id="debug">
+    <div class="d-row"><span class="d-tag">sun raha</span><span class="d-val" id="heard">—</span></div>
+    <div class="d-row"><span class="d-tag">bol raha</span><span class="d-val" id="said">—</span></div>
+  </div>
   <div class="hint">tap to change mood</div>
 
 <script>
@@ -817,6 +824,7 @@
       u.volume = 1;
       const tok = ++speakToken;
       speaking = true;                               /* bol raha hai → engaged */
+      if(said) said.textContent = text;               /* debug: kya bol raha hai */
       const done = () => {
         if(tok !== speakToken) return;                /* purani utterance ignore */
         speaking = false;
@@ -831,15 +839,15 @@
   /* ---------- STT (sunna) — mic hamesha on; wake word ke baad command ---------- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const heard = document.getElementById("heard");
+  const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v58";
+  const APP_VER = "v59";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
-    const tag = APP_VER + " \u00b7 " + proto() + " \u00b7 ";
-    if(!SR) heard.textContent = tag + "mic: NOT supported (Chrome use karo)";
-    else if(!window.isSecureContext) heard.textContent = tag + "mic: HTTPS chahiye (file:// pe nahi)";
-    else heard.textContent = tag + "mic: ready \u2014 kuch bolo";
+    if(!SR) heard.textContent = "mic: NOT supported (Chrome use karo)";
+    else if(!window.isSecureContext) heard.textContent = "mic: HTTPS chahiye (file:// pe nahi)";
+    else heard.textContent = "mic: ready \u2014 kuch bolo";
   }
   let recog = null, recogWanted = false, recogRunning = false;
   let restartT = null, restartDelay = 300;          /* transient error ke baad backoff */
@@ -883,7 +891,7 @@
   }
 
   /* status line chhota helper */
-  function micLine(msg){ if(heard) heard.textContent = APP_VER + " \u00b7 " + proto() + " \u00b7 " + msg; }
+  function micLine(msg){ if(heard) heard.textContent = msg; }
 
   /* Ek naya recogniser banao — har (re)start par fresh instance,
      taaki purani state se InvalidStateError na aaye. */
@@ -896,7 +904,7 @@
     r.onstart = () => {
       recogRunning = true;
       restartDelay = 300;                            /* safal start → backoff reset */
-      micLine("mic: listening\u2026 bolo");
+      micLine("listening\u2026 bolo");
     };
     r.onend = () => {
       recogRunning = false;
@@ -911,7 +919,7 @@
         return;
       }
       /* no-speech / aborted / network / audio-capture — transient; onend restart karega */
-      micLine("mic: listening\u2026 (" + er + ")");
+      micLine("listening\u2026 (" + er + ")");
     };
     r.onresult = (e) => {
       let interim = "", fin = "";
@@ -921,7 +929,7 @@
       }
       const last = e.results[e.results.length - 1];
       const show = (last && last[0]) ? String(last[0].transcript).trim() : "";
-      if(heard && show) heard.textContent = APP_VER + " \u00b7 heard: " + show;
+      if(heard && show) heard.textContent = show;
       if(fin){ handleSpeech(fin); lastTxt = ""; return; }          /* final: hamesha process */
       const t = norm(interim);
       if(t && t !== lastTxt){ lastTxt = t; handleSpeech(t); }      /* interim: turant react */
