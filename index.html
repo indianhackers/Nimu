@@ -841,13 +841,13 @@
   const heard = document.getElementById("heard");
   const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v61";
+  const APP_VER = "v62";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
     if(!SR) heard.textContent = "mic: NOT supported (Chrome use karo)";
     else if(!window.isSecureContext) heard.textContent = "mic: HTTPS chahiye (file:// pe nahi)";
-    else heard.textContent = "mic: ready \u2014 kuch bolo";
+    else heard.textContent = "mic: ready";
   }
   let recog = null, recogWanted = false, recogRunning = false;
   let restartT = null, restartDelay = 300;          /* transient error ke baad backoff */
@@ -934,7 +934,6 @@
     r.onstart = () => {
       recogRunning = true;
       restartDelay = 300;                            /* safal start → backoff reset */
-      micLine("listening\u2026 bolo");
     };
     r.onend = () => {
       recogRunning = false;
@@ -948,8 +947,8 @@
         micLine("mic error: " + er + " (Allow karo)");
         return;
       }
-      /* no-speech / aborted / network / audio-capture — transient; onend restart karega */
-      micLine("listening\u2026 (" + er + ")");
+      /* no-speech / aborted / network / audio-capture — transient; onend restart karega
+         (value ko chhedte nahi — "listening" line sirf suna hua dikhaye) */
     };
     r.onresult = (e) => {
       let interim = "", fin = "";
