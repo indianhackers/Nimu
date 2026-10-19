@@ -521,52 +521,16 @@
   }
   .mood-label.show{ opacity:.95; }
 
-  /* ---------- mic indicator — head ke upper-right corner pe tiny dot ---------- */
-  .mic-dot{
-    position:absolute;
-    top:7%; right:9%;
-    width:1.15vmin; height:1.15vmin;
-    border-radius:50%;
-    background:#8a4300;                                   /* dark orange */
-    box-shadow: 0 0 .7vmin rgba(255,170,40,1), 0 0 2.2vmin rgba(255,130,0,.85), 0 0 3.4vmin rgba(255,110,0,.45);
-    opacity:0; transform:scale(.3);
-    transition: opacity .16s ease, transform .16s ease, background .16s ease, box-shadow .16s ease;
-    pointer-events:none;
-    z-index:20;
+  /* ---------- listening indicator — ears ki light (orange glow) ---------- */
+  .emo.listening .ear-accent{
+    background:#ff8a00;
+    box-shadow: 0 0 2.4vmin rgba(255,150,30,.95), 0 0 4.2vmin rgba(255,120,0,.5);
+    animation: earPulse 1.4s ease-in-out infinite;
   }
-  .mic-dot.on{ opacity:1; transform:scale(1); animation: dotPulse 1.5s ease-in-out infinite; }
-  @keyframes dotPulse{
-    0%,100%{ box-shadow:0 0 .7vmin rgba(255,170,40,1), 0 0 2.2vmin rgba(255,130,0,.85), 0 0 3.4vmin rgba(255,110,0,.45); }
-    50%    { box-shadow:0 0 .9vmin rgba(255,195,80,1), 0 0 3.2vmin rgba(255,140,10,1),  0 0 4.8vmin rgba(255,120,0,.6); }
+  @keyframes earPulse{
+    0%,100%{ opacity:.7; }
+    50%    { opacity:1; }
   }
-  .mic-dot.cam{ background:#0f4d2a; box-shadow:0 0 .7vmin rgba(45,210,100,1), 0 0 2.2vmin rgba(30,170,70,.85); }
-  .mic-dot.loc{ background:#123a86; box-shadow:0 0 .7vmin rgba(70,140,255,1), 0 0 2.2vmin rgba(40,100,230,.85); }
-  .mic-dot.rec{ background:#761212; box-shadow:0 0 .7vmin rgba(255,70,70,1),  0 0 2.2vmin rgba(230,40,40,.85); }
-
-  /* background glow (jab Nimu sun raha ho) — floor waise hi rahega */
-  .bg-glow{
-    position:fixed; inset:0;
-    background: radial-gradient(circle at 50% 45%, rgba(255,140,20,.26) 0%, rgba(255,110,0,.09) 52%, rgba(0,0,0,0) 78%);
-    opacity:0; transition: opacity .35s ease;
-    pointer-events:none; z-index:0;
-  }
-  .bg-glow.on{ opacity:1; }
-
-  /* listening bubbles (jab Nimu sun raha ho) */
-  .lb{
-    position:absolute;
-    width:3.4vmin; height:3.4vmin;
-    border-radius:50%;
-    background: radial-gradient(circle at 35% 30%, #ffffff, #6ff0e8 50%, #12a19d);
-    box-shadow:0 0 2vmin rgba(90,240,235,.95);
-    opacity:0; pointer-events:none;
-  }
-  .lb.l1{ left:44%; bottom:38%; }
-  .lb.l2{ left:56%; bottom:33%; width:2.6vmin; height:2.6vmin; }
-  .lb.l3{ left:34%; bottom:43%; width:2.2vmin; height:2.2vmin; }
-  .emo.listening .lb{ animation: bubbleUp 1.9s ease-in infinite; }
-  .emo.listening .lb.l2{ animation-delay:.6s; }
-  .emo.listening .lb.l3{ animation-delay:1.2s; }
 
   /* debug: jo suna gaya (temporary) */
   .heard{
@@ -603,7 +567,6 @@
 </style>
 </head>
 <body>
-  <div class="bg-glow" id="bgGlow"></div>
   <div class="stage">
   <div class="floor"></div>
   <div class="shadow"></div>
@@ -628,9 +591,6 @@
             <span class="zb b1">z</span>
             <span class="zb b2">z</span>
             <span class="zb b3">z</span>
-            <span class="lb l1"></span>
-            <span class="lb l2"></span>
-            <span class="lb l3"></span>
             <span class="bubble b1">&#9829;</span>
             <span class="bubble b2">&#9829;</span>
             <span class="bubble b3">&#9829;</span>
@@ -649,7 +609,6 @@
           </div>
           <span class="mouth"></span>
         </div>
-        <span class="mic-dot" id="micDot"></span>
       </div>
 
       <div class="ear right">
@@ -862,7 +821,6 @@
 
   /* ---------- STT (sunna) — mic hamesha on; wake word ke baad command ---------- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const micDot = document.getElementById("micDot");
   const heard = document.getElementById("heard");
   /* status: pehle hi bata do ki mic chalega ya nahi */
   const APP_VER = "v53";
@@ -877,10 +835,7 @@
   let recog = null, recogWanted = false, attentive = false, attentiveT = null;
   /* wake words: "hii nimu" / "hey nimu" / "hello nimu" / "Nimu" / "hello" / "hi" / "hey" */
   const WAKE = /\b(nimu|neemu|nimoo|nemo|ni\s?mu|hello|hii?|hey)\b/i;
-  const bgGlow = document.getElementById("bgGlow");
   function setListening(on){
-    if(micDot) micDot.classList.toggle("on", !!on);
-    if(bgGlow) bgGlow.classList.toggle("on", !!on);
     emo.classList.toggle("listening", !!on);
   }
   function dotOn(){
