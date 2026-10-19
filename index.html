@@ -791,6 +791,7 @@
 
   /* ---------- voice (TTS — wake pe greeting, English) ---------- */
   let ttsVoice = null, gi = 0;
+  let speaking = false, speakToken = 0;   /* speaking = TTS bol raha hai (engaged ke liye) */
   const GREETINGS = ["Hi! I'm Nimu", "Hey! I'm Nimu", "Hello! I'm Nimu"];
   function pickVoice(){
     if(!("speechSynthesis" in window)) return;
@@ -814,6 +815,14 @@
       u.pitch = 1.35;    /* cute, thoda high */
       u.rate = 1.05;
       u.volume = 1;
+      const tok = ++speakToken;
+      speaking = true;                               /* bol raha hai → engaged */
+      const done = () => {
+        if(tok !== speakToken) return;                /* purani utterance ignore */
+        speaking = false;
+        if(!asleep && !attentive) resetSleepTimer();  /* bolna khatam → countdown phir se */
+      };
+      u.onend = done; u.onerror = done;
       window.speechSynthesis.speak(u);
     }catch(e){}
   }
@@ -823,7 +832,7 @@
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const heard = document.getElementById("heard");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v57";
+  const APP_VER = "v58";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
@@ -848,6 +857,7 @@
   function dotOff(){
     setListening(false);
     if(attentiveT){ window.clearTimeout(attentiveT); attentiveT = null; }
+    if(!asleep && !speaking) resetSleepTimer();   /* engagement khatam → 25s countdown yahin se */
   }
   const COMMANDS = [
     { re: /\bhow are you\b/i,      act: () => { speak("I'm good, thank you!"); } },
@@ -862,10 +872,12 @@
     const t = norm(txt);
     if(!t) return;
     if(attentive){
+      resetSleepTimer();                             /* user baat kar raha hai → jaagta raho */
       for(const c of COMMANDS){ if(c.re.test(t)){ c.act(); attentive = false; dotOff(); return; } }
     }
     if(WAKE.test(t)){
       if(!attentive) setMood(Math.random() < 0.5 ? "happy" : "excited", false);   /* wake pe khush ho jaye */
+      resetSleepTimer();
       attentive = true; dotOn(); return;
     }
   }
@@ -978,9 +990,24 @@
   }
 
   /* ---------- sleep / wake ---------- */
-  let sleepTimer = null, settleTimer = null;
-  const SLEEP_AFTER = 25000;                 /* 25s bina interaction → so jaata hai */
+  const SLEEP_AFTER = 25000;                 /* 25s idle (jab engaged na ho) → so jaata hai */
   const SETTLE_AFTER = SLEEP_AFTER - 1000;   /* 24s → pehle neutral (calm) ho jaata hai */
+  let lastActivity = Date.now(), settled = false, sleepWatch = null;
+  /* "engaged" = Nimu se baat ho rahi hai (sun raha hai ya bol raha hai) */
+  function engaged(){ return attentive || speaking; }
+  /* koi bhi interaction → idle countdown ab se dobara shuru */
+  function resetSleepTimer(){
+    lastActivity = Date.now();
+    settled = false;
+  }
+  function tickSleep(){
+    if(asleep) return;
+    if(engaged()) return;                    /* engaged hai → so nahi sakta */
+    const idle = Date.now() - lastActivity;
+    if(!settled && idle >= SETTLE_AFTER){ settled = true; setMood("neutral", false); SND.settle(); }
+    if(idle >= SLEEP_AFTER){ sleep(); }
+  }
+  function startSleepWatch(){ if(!sleepWatch) sleepWatch = window.setInterval(tickSleep, 1000); }
   function sleep(){
     if(asleep) return;
     asleep = true;
@@ -997,16 +1024,9 @@
     blink();
     SND.wake();
     stopSnore();
+    resetSleepTimer();                                     /* jaagte hi countdown fresh */
     startListening();                                      /* jaagte hi listening chalu */
     window.setTimeout(() => { if(!asleep) greet(); }, 420);   /* greeting bole */
-  }
-  function resetSleepTimer(){
-    window.clearTimeout(sleepTimer);
-    window.clearTimeout(settleTimer);
-    /* 24s: chup-chaap neutral ho jao (koi label nahi) */
-    settleTimer = window.setTimeout(() => { if(!asleep){ setMood("neutral", false); SND.settle(); } }, SETTLE_AFTER);
-    /* 25s: so jao */
-    sleepTimer = window.setTimeout(sleep, SLEEP_AFTER);
   }
 
   /* ---------- moods ---------- */
@@ -1041,6 +1061,7 @@
   window.setTimeout(blink, 900);
   window.setTimeout(driftEyes, 1000);
   resetSleepTimer();
+  startSleepWatch();
   micStatus();
   startListening();
 })();
