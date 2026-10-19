@@ -546,7 +546,7 @@
     z-index:60;
   }
   .debug .d-row{ display:flex; align-items:baseline; gap:1.4vmin; max-width:94vw; }
-  .debug .d-tag{ opacity:.6; text-transform:uppercase; letter-spacing:.12em; font-size:2vmin; min-width:12vmin; text-align:right; }
+  .debug .d-tag{ opacity:.6; letter-spacing:.08em; font-size:2vmin; min-width:12vmin; text-align:right; }
   .debug .d-val{ color:#eaf7fb; max-width:76vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
   .hint{
@@ -636,8 +636,8 @@
 
   <div class="mood-label" id="moodLabel"></div>
   <div class="debug" id="debug">
-    <div class="d-row"><span class="d-tag">sun raha</span><span class="d-val" id="heard">—</span></div>
-    <div class="d-row"><span class="d-tag">bol raha</span><span class="d-val" id="said">—</span></div>
+    <div class="d-row"><span class="d-tag">Sun raha - listening</span><span class="d-val" id="heard">—</span></div>
+    <div class="d-row"><span class="d-tag">Bol raha - Nimu</span><span class="d-val" id="said">—</span></div>
   </div>
   <div class="hint">tap to change mood</div>
 
@@ -841,7 +841,7 @@
   const heard = document.getElementById("heard");
   const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v59";
+  const APP_VER = "v60";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
@@ -868,25 +868,55 @@
     if(!asleep && !speaking) resetSleepTimer();   /* engagement khatam → 25s countdown yahin se */
   }
   const COMMANDS = [
-    { re: /\bhow are you\b/i,      act: () => { speak("I'm good, thank you!"); } },
-    { re: /\bwhat.*your name\b/i,  act: () => { speak("I'm Nimu"); } },
-    { re: /\bsleep\b/i,            act: () => { sleep(); } },
-    { re: /\b(wake up|wakeup)\b/i, act: () => { if(asleep) wake(); } },
-    { re: /\bbye\b/i,              act: () => { setMood("sad", true); speak("Bye! See you soon"); } }
+    /* --- pehchaan / madad --- */
+    { re: /\b(what can you do|what do you do|help)\b/i,               act: () => { speak("You can say: how are you, tell me a joke, what time is it, sing a song, and more!"); } },
+    { re: /\b(how do you feel|are you happy|how are you feeling)\b/i, act: () => { speak("I feel happy when you talk to me!"); } },
+    { re: /\bhow are you\b/i,                                         act: () => { speak("I'm good, thank you!"); } },
+    { re: /\b(who|what) are you\b/i,                                  act: () => { speak("I'm Nimu, your little robot friend!"); } },
+    { re: /\bwhat.*your name\b/i,                                     act: () => { speak("I'm Nimu"); } },
+    { re: /\b(how old are you|your age)\b/i,                          act: () => { speak("I'm a little robot, just a few days old!"); } },
+    /* --- pyaar / shukriya / din --- */
+    { re: /\b(do you love me|i love you|love you)\b/i,                act: () => { setMood("love", true); speak("Aww, I love you too!"); } },
+    { re: /\b(thank you|thanks|thank u)\b/i,                          act: () => { speak("You're welcome!"); } },
+    { re: /\bgood morning\b/i,                                        act: () => { setMood("happy", true); speak("Good morning! Have a lovely day!"); } },
+    { re: /\bgood (night|evening)\b/i,                                act: () => { setMood("sleepy", true); speak("Good night! Sleep well."); } },
+    /* --- mazaa / info --- */
+    { re: /\b(tell me a joke|joke|make me laugh)\b/i,                 act: () => { speak(pick(JOKES)); } },
+    { re: /\b(what.*time|the time)\b/i,                               act: () => { const d = new Date(); speak("It's " + d.toLocaleTimeString("en-IN", { hour:"numeric", minute:"2-digit" })); } },
+    { re: /\b(what.*date|what day is (it|today)|today s date)\b/i,    act: () => { const d = new Date(); speak("Today is " + d.toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long" })); } },
+    { re: /\bsing\b/i,                                                act: () => { setMood("happy", true); speak("La la la! I love singing!"); } },
+    { re: /\bdance\b/i,                                               act: () => { speak("I can't dance yet, but I can wiggle!"); } },
+    /* --- mood --- */
+    { re: /\b(good (boy|girl|job)|well done)\b/i,                     act: () => { setMood("happy", true); speak("Thank you!"); } },
+    { re: /\b(cheer up|be happy|smile)\b/i,                           act: () => { setMood("happy", true); speak("Yay! I'm happy!"); } },
+    { re: /\bi m sad\b|\bi am sad\b/i,                                act: () => { setMood("love", true); speak("Don't be sad. I'm here with you!"); } },
+    /* --- sleep / bye --- */
+    { re: /\bsleep\b/i,                                               act: () => { sleep(); } },
+    { re: /\b(wake up|wakeup)\b/i,                                    act: () => { if(asleep) wake(); } },
+    { re: /\b(bye|goodbye|good bye)\b/i,                              act: () => { setMood("sad", true); speak("Bye! See you soon"); } }
   ];
+  const JOKES = [
+    "Why did the robot go to school? To get a little smarter!",
+    "What do robots eat? Micro-chips!",
+    "Why was the robot angry? Someone kept pushing its buttons!"
+  ];
+  const FALLBACK = ["Hmm?", "I didn't catch that.", "Tell me more!", "Hehe, okay!", "I'm listening!", "I'm still learning, sorry!"];
+  function pick(a){ return a[Math.floor(Math.random() * a.length)]; }
   function norm(t){ return String(t||"").toLowerCase().replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim(); }
   let lastTxt = "";
-  function handleSpeech(txt){
+  function handleSpeech(txt, isFinal){
     const t = norm(txt);
     if(!t) return;
-    if(attentive){
-      resetSleepTimer();                             /* user baat kar raha hai → jaagta raho */
-      for(const c of COMMANDS){ if(c.re.test(t)){ c.act(); attentive = false; dotOff(); return; } }
-    }
+    /* wake word → attentive window kholo ya extend karo */
     if(WAKE.test(t)){
       if(!attentive) setMood(Math.random() < 0.5 ? "happy" : "excited", false);   /* wake pe khush ho jaye */
       resetSleepTimer();
       attentive = true; dotOn(); return;
+    }
+    if(attentive){
+      resetSleepTimer();                             /* user baat kar raha hai → jaagta raho */
+      for(const c of COMMANDS){ if(c.re.test(t)){ c.act(); attentive = false; dotOff(); return; } }
+      if(isFinal){ speak(pick(FALLBACK)); }          /* kuch samajh na aaya → cute reply (final par hi) */
     }
   }
 
@@ -930,9 +960,9 @@
       const last = e.results[e.results.length - 1];
       const show = (last && last[0]) ? String(last[0].transcript).trim() : "";
       if(heard && show) heard.textContent = show;
-      if(fin){ handleSpeech(fin); lastTxt = ""; return; }          /* final: hamesha process */
+      if(fin){ handleSpeech(fin, true); lastTxt = ""; return; }          /* final: hamesha process */
       const t = norm(interim);
-      if(t && t !== lastTxt){ lastTxt = t; handleSpeech(t); }      /* interim: turant react */
+      if(t && t !== lastTxt){ lastTxt = t; handleSpeech(t, false); }     /* interim: turant react */
     };
     return r;
   }
