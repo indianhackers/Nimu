@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Nimu</title>
+<style>
+  /* ============================================================
+     NIMU — THEME COLOURS
+     Rang badalne ke liye sirf yahan ke values change karo.
+     ============================================================ */
+  :root{
+    /* page background */
+    --bg-1:#12151a;
+    --bg-2:#07090c;
+    --bg-3:#000000;
+
+    /* accent — headphone band stripe + earcup accents */
+    --accent:#3fd0d0;
+    --accent-glow:rgba(63,208,208,.55);
+    --accent-glow-strong:rgba(63,208,208,.75);
+
+    /* eyes */
+    --eye-1:#c4fcf8;
+    --eye-2:#4fe3dc;
+    --eye-3:#1fbfba;
+    --eye-4:#12a19d;
+    --eye-glow:rgba(60,220,215,.55);
+    --eye-shade:rgba(0,80,80,.45);
+
+    /* headphone earcups */
+    --ear-1:#514a75;
+    --ear-2:#332d54;
+    --ear-3:#1e1a33;
+    --ear-pad-1:#6a6398;
+    --ear-pad-2:#332e52;
+
+    /* head shell */
+    --head-1:#5b5f68;
+    --head-2:#41454d;
+    --head-3:#2b2e35;
+
+    /* screen */
+    --screen-1:#10161f;
+    --screen-2:#04070c;
+    --screen-3:#010204;
+
+    /* legs */
+    --leg-1:#35313f;
+    --leg-2:#211d2b;
+    --leg-3:#15121c;
+
+    /* feet */
+    --foot-1:#3f3a4e;
+    --foot-2:#2a2536;
+    --foot-3:#191524;
+    --sole-1:#4a3f7a;
+    --sole-2:#6a5bb0;
+    --indicator:#8f7fd8;
+
+    /* hint text */
+    --hint:#3a5563;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    height:100vh;
+    height:100dvh;
+    background: radial-gradient(circle at 50% 45%, var(--bg-1) 0%, var(--bg-2) 55%, var(--bg-3) 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:manipulation;
+  }
+
+  /* ---------- whole unit ---------- */
+  .emo{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    transform-origin:50% 100%;
+    animation: breathe 6s ease-in-out infinite;
+    will-change: transform;
+  }
+  @keyframes breathe{
+    0%,100%{transform:scaleY(1);}
+    50%{transform:scaleY(1.015);}
+  }
+  .top{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  /* ---------- sleep ---------- */
+  @keyframes breatheSleep{
+    0%,100%{transform:scaleY(1);}
+    50%{transform:scaleY(1.03);}
+  }
+  .emo.asleep{ animation-name: breatheSleep; animation-duration: 9s; }
+  .emo.asleep .eye{ transform: scaleY(.06); transition: transform .5s ease; }
+  /* sote waqt "z" bubbles udte hain (love ke heart bubbles jaisa) */
+  .zb{
+    position:absolute;
+    color:#bfeef2;
+    font:700 5.4vmin/1 system-ui,-apple-system,sans-serif;
+    text-shadow:0 0 1.6vmin rgba(120,240,240,.9);
+    opacity:0;
+    pointer-events:none;
+  }
+  .zb.b1{ left:57%; bottom:38%; }
+  .zb.b2{ left:67%; bottom:33%; font-size:4.4vmin; }
+  .zb.b3{ left:75%; bottom:41%; font-size:3.6vmin; }
+  .emo.asleep .zb{ animation: bubbleUp 2.1s ease-in infinite; }
+  .emo.asleep .zb.b2{ animation-delay:.7s; }
+  .emo.asleep .zb.b3{ animation-delay:1.4s; }
+
+  /* ---------- ground: floor + contact shadow ---------- */
+  .stage{ position:relative; z-index:1; }
+  .floor{
+    position:absolute;
+    left:50%; bottom:-15vmin;
+    transform:translateX(-50%);
+    width:132vmin; height:30vmin;
+    background: radial-gradient(ellipse 46% 42% at 50% 50%, rgba(120,158,195,.30) 0%, rgba(120,158,195,.10) 48%, rgba(0,0,0,0) 74%);
+    pointer-events:none;
+  }
+  .shadow{
+    position:absolute;
+    left:50%; bottom:-3vmin;
+    transform:translateX(-50%);
+    width:38vmin; height:7vmin;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,.85) 0%, rgba(0,0,0,.55) 40%, rgba(0,0,0,0) 74%);
+    filter: blur(.8vmin);
+    pointer-events:none;
+    transition: transform .5s ease, opacity .5s ease, filter .5s ease;
+  }
+
+  /* ---------- headphone band ---------- */
+  .band{
+    position:absolute;
+    top:-8vmin;
+    left:50%;
+    transform:translateX(-50%);
+    width:53vmin;
+    height:39vmin;
+    border:3.6vmin solid transparent;
+    border-top-color:var(--ear-2);
+    border-left-color:var(--ear-2);
+    border-right-color:var(--ear-2);
+    border-radius:50%;
+    filter: drop-shadow(0 0 2vmin rgba(0,0,0,.6));
+    z-index:0;
+  }
+  .band::after{
+    content:"";
+    position:absolute;
+    inset:-3.6vmin;
+    border:1.4vmin solid transparent;
+    border-top-color:var(--accent);
+    border-left-color:var(--accent);
+    border-right-color:var(--accent);
+    border-radius:50%;
+    filter: drop-shadow(0 0 1.6vmin var(--accent-glow));
+  }
+
+  /* ---------- earcups ---------- */
+  .ear{
+    position:relative;
+    width:14vmin;
+    height:27vmin;
+    border-radius:7vmin;
+    background: linear-gradient(150deg,var(--ear-1) 0%,var(--ear-2) 45%,var(--ear-3) 100%);
+    box-shadow:
+      inset 0 0 2.6vmin rgba(130,160,230,.30),
+      inset 0 -1.6vmin 3vmin rgba(0,0,0,.65),
+      0 0 3.4vmin rgba(0,0,0,.6);
+    z-index:2;
+  }
+  .ear.left { margin-right:-6vmin; }
+  .ear.right{ margin-left:-6vmin; }
+
+  .ear-pad{
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:7.2vmin; height:16vmin;
+    border-radius:4.4vmin;
+    background: linear-gradient(160deg,var(--ear-pad-1),var(--ear-pad-2) 75%);
+    box-shadow: inset 0 0 1.8vmin rgba(170,195,255,.30);
+  }
+  .ear-accent{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    width:1.4vmin; height:11.5vmin;
+    border-radius:1vmin;
+    background:var(--accent);
+    box-shadow: 0 0 1.8vmin var(--accent-glow-strong);
+  }
+  .ear.left  .ear-accent{ left:1.8vmin; }
+  .ear.right .ear-accent{ right:1.8vmin; }
+
+  /* ---------- head / screen unit ---------- */
+  .head{
+    position:relative;
+    width:46vmin;
+    height:46vmin;
+    border-radius:16vmin;
+    background: linear-gradient(155deg,var(--head-1) 0%,var(--head-2) 40%,var(--head-3) 100%);
+    box-shadow:
+      inset 0 1.4vmin 2.4vmin rgba(255,255,255,.14),
+      inset 0 -2vmin 4vmin rgba(0,0,0,.55),
+      0 2vmin 6vmin rgba(0,0,0,.6);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:3;
+  }
+
+  .screen{
+    position:relative;
+    width:37vmin;
+    height:37vmin;
+    border-radius:12.5vmin;
+    background:
+      radial-gradient(circle at 50% 22%, var(--screen-1) 0%, var(--screen-2) 62%, var(--screen-3) 100%);
+    box-shadow:
+      inset 0 0 4vmin rgba(0,0,0,.9),
+      inset 0 .8vmin 1.6vmin rgba(90,120,150,.14),
+      0 0 0 .4vmin rgba(0,0,0,.5);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+  .screen::after{
+    content:"";
+    position:absolute;
+    top:-14%; left:-20%;
+    width:90%; height:60%;
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,0));
+    border-radius:50%;
+    transform: rotate(-12deg);
+    pointer-events:none;
+  }
+
+  /* ---------- eyes ---------- */
+  .eyes{
+    display:flex;
+    gap:3.4vmin;
+    margin-top:1.6vmin;
+    transition: transform .5s cubic-bezier(.34,1.2,.5,1);
+    will-change: transform;
+  }
+  .eye{
+    position:relative;
+    width:11vmin;
+    height:11vmin;
+    transition: transform .12s ease;
+    will-change: transform;
+  }
+  .eye.closed{ transform: scaleY(.06); }
+
+  /* block eye (rounded square) — neutral, sleepy, angry, surprised… */
+  .e-block{
+    position:absolute; inset:0;
+    overflow:hidden;
+    border-radius:3.6vmin;
+    background: linear-gradient(180deg,var(--eye-1) 0%,var(--eye-2) 42%,var(--eye-3) 78%,var(--eye-4) 100%);
+    box-shadow:
+      0 0 2.6vmin var(--eye-glow),
+      inset 0 -1vmin 2vmin var(--eye-shade),
+      inset 0 .8vmin 1.4vmin rgba(255,255,255,.55);
+    transition: transform .3s cubic-bezier(.34,1.2,.5,1), border-radius .3s ease, opacity .22s ease, filter .3s ease;
+    will-change: transform, opacity;
+  }
+  /* arc eye (curved line) — happy, excited, sad */
+  .e-arc{
+    position:absolute;
+    inset:0;
+    width:100%; height:100%;
+    overflow:visible;
+    opacity:0;
+    filter: drop-shadow(0 0 1.6vmin var(--eye-glow));
+    transition: opacity .22s ease, transform .3s cubic-bezier(.34,1.2,.5,1);
+    will-change: transform, opacity;
+  }
+
+  /* heart eye — love */
+  .e-heart{
+    position:absolute;
+    left:50%; top:50%;
+    width:7.4vmin; height:6.66vmin;
+    transform:translate(-50%,-50%) scale(.5);
+    opacity:0;
+    filter: drop-shadow(0 0 2vmin rgba(255,91,149,.6));
+    transition: transform .35s cubic-bezier(.34,1.5,.5,1), opacity .25s ease;
+    will-change: transform, opacity;
+  }
+  .e-heart::before,
+  .e-heart::after{
+    content:"";
+    position:absolute;
+    top:0;
+    width:3.7vmin; height:5.92vmin;
+    background:#ff5b95;
+    border-radius:3.7vmin 3.7vmin 0 0;
+  }
+  .e-heart::before{ left:3.7vmin; transform:rotate(-45deg); transform-origin:0 100%; }
+  .e-heart::after{ left:0; transform:rotate(45deg); transform-origin:100% 100%; }
+
+  /* ===== MOODS ===== */
+
+  /* neutral */
+  .emo[data-mood="neutral"] .e-block{ transform:none; }
+
+  /* happy — upward arc + smile */
+  .emo[data-mood="happy"] .e-block{ opacity:0; }
+  .emo[data-mood="happy"] .e-arc{ opacity:1; }
+
+  /* excited — bigger arcs + brighter */
+  .emo[data-mood="excited"] .e-block{ opacity:0; }
+  .emo[data-mood="excited"] .e-arc{ opacity:1; transform:scale(1.12); }
+
+  /* love — heart eyes */
+  .emo[data-mood="love"] .e-block{ opacity:0; }
+  .emo[data-mood="love"] .e-arc{ opacity:0; }
+  .emo[data-mood="love"] .e-heart{ opacity:1; transform:translate(-50%,-50%) scale(1); }
+
+  /* sad — downward arcs */
+  .emo[data-mood="sad"] .e-block{ opacity:0; }
+  .emo[data-mood="sad"] .e-arc{ opacity:1; transform:scaleY(-1) translateY(6%); }
+
+  /* sleepy — thin slits */
+  .emo[data-mood="sleepy"] .e-block{ transform:scaleY(.26); border-radius:3.4vmin; filter:brightness(.88); }
+
+  /* bored — half-lidded */
+  .emo[data-mood="bored"] .e-block{ transform:scaleY(.44); border-radius:2.4vmin; filter:brightness(.9); }
+
+  /* surprised — big + round */
+  .emo[data-mood="surprised"] .e-block{ transform:scale(1.14); border-radius:5.2vmin; filter:brightness(1.18); }
+
+  /* angry — angled bars */
+  .emo[data-mood="angry"] .e-block{ transform:rotate(20deg) scaleY(.4); border-radius:1.8vmin; filter:brightness(1.06) saturate(1.1); }
+  .emo[data-mood="angry"] .eye:last-child .e-block{ transform:rotate(-20deg) scaleY(.4); }
+
+
+  /* confused — asymmetric eyes */
+  .emo[data-mood="confused"] .eye.left  .e-block{ transform:translateY(-6%) rotate(-10deg) scale(.86); border-radius:3vmin; }
+  .emo[data-mood="confused"] .eye.right .e-block{ transform:translateY(6%) rotate(8deg) scale(1.06); border-radius:4vmin; }
+
+  /* ---------- mouth ---------- */
+  .mouth{
+    position:absolute;
+    left:50%; top:67%;
+    width:15vmin; height:7.6vmin;
+    border:2.4vmin solid transparent;
+    border-bottom-color:var(--eye-2);
+    border-radius:0 0 50% 50%;
+    transform:translateX(-50%) scale(.5);
+    opacity:0;
+    filter: drop-shadow(0 0 1.4vmin var(--eye-glow));
+    transition: opacity .25s ease, transform .35s cubic-bezier(.34,1.5,.5,1);
+    pointer-events:none;
+  }
+  .emo[data-mood="happy"] .mouth{ opacity:1; transform:translateX(-50%) scale(1); }
+
+  /* ---------- overlay marks ---------- */
+  .marks{ position:absolute; inset:0; pointer-events:none; }
+  .mark{
+    position:absolute;
+    opacity:0;
+    transform:scale(.6);
+    transition: opacity .25s ease, transform .35s cubic-bezier(.34,1.5,.5,1);
+  }
+
+  /* flame — anger */
+  .flame{
+    top:10%; right:14%;
+    width:5.2vmin; height:7.2vmin;
+    background: linear-gradient(180deg,#ffd24a 0%,#ff8a2b 45%,#ff3b3b 100%);
+    clip-path: polygon(50% 0%,72% 38%,60% 33%,78% 64%,50% 100%,22% 64%,40% 33%,28% 38%);
+    filter: drop-shadow(0 0 1.4vmin rgba(255,90,40,.85));
+  }
+  /* sparkles — excited */
+  .sparkle{
+    width:4.6vmin; height:4.6vmin;
+    background:#d8fbff;
+    clip-path: polygon(50% 0%,58% 42%,100% 50%,58% 58%,50% 100%,42% 58%,0% 50%,42% 42%);
+    filter: drop-shadow(0 0 1.2vmin rgba(120,240,240,.9));
+  }
+  .sparkle.s1{ top:9%; left:13%; }
+  .sparkle.s2{ top:24%; right:11%; width:3.4vmin; height:3.4vmin; }
+  /* question mark — confused */
+  .qmark{
+    top:7%; right:15%;
+    color:#eafcff;
+    font:700 6.8vmin/1 system-ui,-apple-system,sans-serif;
+    text-shadow:0 0 1.8vmin rgba(120,240,240,.85);
+  }
+  /* Zzz — sleepy */
+  .zzz{
+    top:6%; right:13%;
+    color:#bfeef2;
+    font:700 6.6vmin/1 system-ui,-apple-system,sans-serif;
+    text-shadow:0 0 1.6vmin rgba(120,240,240,.75);
+  }
+  /* heart bubbles — love */
+  .bubble{
+    position:absolute;
+    color:#ff6b9d;
+    font:700 3.6vmin/1 system-ui,-apple-system,sans-serif;
+    opacity:0;
+    text-shadow:0 0 1.4vmin rgba(255,107,157,.85);
+    pointer-events:none;
+  }
+  .bubble.b1{ left:23%; bottom:33%; }
+  .bubble.b2{ left:47%; bottom:28%; }
+  .bubble.b3{ left:68%; bottom:35%; }
+  /* tear — sad */
+  .tear{
+    top:58%; left:20%;
+    width:2.6vmin; height:3.8vmin;
+    background:linear-gradient(180deg,#9fe8ff,#3fa9e0);
+    border-radius:50% 50% 50% 50% / 68% 68% 32% 32%;
+    transform: rotate(180deg) scale(.6);
+    filter: drop-shadow(0 0 1vmin rgba(90,200,255,.8));
+  }
+
+  /* show marks per mood */
+  .emo[data-mood="angry"]     .flame{ opacity:1; transform:scale(1); }
+  .emo[data-mood="excited"]   .sparkle{ opacity:1; transform:scale(1); }
+  .emo[data-mood="confused"]  .qmark{ opacity:1; transform:scale(1); }
+  .emo[data-mood="sleepy"]    .zzz{ opacity:1; transform:scale(1); }
+  .emo[data-mood="love"]      .bubble{ animation: bubbleUp 1.9s ease-in infinite; }
+  .emo[data-mood="love"]      .bubble.b2{ animation-delay:.65s; }
+  .emo[data-mood="love"]      .bubble.b3{ animation-delay:1.3s; }
+  @keyframes bubbleUp{
+    0%{ opacity:0; transform:translateY(0) scale(.5); }
+    25%{ opacity:1; }
+    100%{ opacity:0; transform:translateY(-16vmin) scale(1.15); }
+  }
+  .emo[data-mood="sad"]       .tear{ opacity:1; transform:rotate(180deg) scale(1); }
+
+  /* ---------- body / legs ---------- */
+  .body{
+    position:relative;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    gap:2.6vmin;
+    margin-top:-3vmin;
+    z-index:1;
+  }
+  .leg{ display:flex; flex-direction:column; align-items:center; }
+  .thigh{
+    width:9.6vmin;
+    height:20vmin;
+    border-radius:4.6vmin 4.6vmin 2vmin 2vmin;
+    background: linear-gradient(180deg,var(--leg-1) 0%,var(--leg-2) 55%,var(--leg-3) 100%);
+    box-shadow:
+      inset 0 0 1.6vmin rgba(130,120,185,.22),
+      inset 0 -1.2vmin 2.4vmin rgba(0,0,0,.6),
+      0 0 2vmin rgba(0,0,0,.5);
+  }
+  .foot{
+    position:relative;
+    width:16vmin;
+    height:6.6vmin;
+    margin-top:-2vmin;
+    border-radius:2.8vmin 2.8vmin 2.4vmin 2.4vmin;
+    background: linear-gradient(180deg,var(--foot-1) 0%,var(--foot-2) 55%,var(--foot-3) 100%);
+    box-shadow:
+      inset 0 .9vmin 1.6vmin rgba(150,140,205,.22),
+      0 .6vmin 1.8vmin rgba(0,0,0,.55);
+  }
+  .foot::after{
+    content:"";
+    position:absolute;
+    left:8%; right:8%; bottom:0;
+    height:1.2vmin;
+    border-radius:1vmin;
+    background: linear-gradient(90deg,var(--sole-1),var(--sole-2),var(--sole-1));
+    opacity:.9;
+  }
+  .foot::before{
+    content:"";
+    position:absolute;
+    left:50%; top:30%;
+    transform:translateX(-50%);
+    width:.9vmin; height:2.2vmin;
+    border-radius:.7vmin;
+    background:var(--indicator);
+    box-shadow:0 0 1vmin rgba(143,127,216,.7);
+    opacity:.85;
+  }
+
+  /* ---------- bottom text ---------- */
+  .mood-label{
+    position:fixed;
+    bottom: max(12vmin, calc(env(safe-area-inset-bottom) + 10vmin));
+    left:0; right:0;
+    text-align:center;
+    color:var(--hint);
+    font:700 3.2vmin/1 system-ui,-apple-system,sans-serif;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    opacity:0;
+    transition: opacity .3s ease;
+    pointer-events:none;
+  }
+  .mood-label.show{ opacity:.95; }
+
+  /* ---------- mic indicator — head ke upper-right corner pe tiny dot ---------- */
+  .mic-dot{
+    position:absolute;
+    top:7%; right:9%;
+    width:1.15vmin; height:1.15vmin;
+    border-radius:50%;
+    background:#8a4300;                                   /* dark orange */
+    box-shadow: 0 0 .7vmin rgba(255,170,40,1), 0 0 2.2vmin rgba(255,130,0,.85), 0 0 3.4vmin rgba(255,110,0,.45);
+    opacity:0; transform:scale(.3);
+    transition: opacity .16s ease, transform .16s ease, background .16s ease, box-shadow .16s ease;
+    pointer-events:none;
+    z-index:20;
+  }
+  .mic-dot.on{ opacity:1; transform:scale(1); animation: dotPulse 1.5s ease-in-out infinite; }
+  @keyframes dotPulse{
+    0%,100%{ box-shadow:0 0 .7vmin rgba(255,170,40,1), 0 0 2.2vmin rgba(255,130,0,.85), 0 0 3.4vmin rgba(255,110,0,.45); }
+    50%    { box-shadow:0 0 .9vmin rgba(255,195,80,1), 0 0 3.2vmin rgba(255,140,10,1),  0 0 4.8vmin rgba(255,120,0,.6); }
+  }
+  .mic-dot.cam{ background:#0f4d2a; box-shadow:0 0 .7vmin rgba(45,210,100,1), 0 0 2.2vmin rgba(30,170,70,.85); }
+  .mic-dot.loc{ background:#123a86; box-shadow:0 0 .7vmin rgba(70,140,255,1), 0 0 2.2vmin rgba(40,100,230,.85); }
+  .mic-dot.rec{ background:#761212; box-shadow:0 0 .7vmin rgba(255,70,70,1),  0 0 2.2vmin rgba(230,40,40,.85); }
+
+  /* background glow (jab Nimu sun raha ho) — floor waise hi rahega */
+  .bg-glow{
+    position:fixed; inset:0;
+    background: radial-gradient(circle at 50% 45%, rgba(255,140,20,.26) 0%, rgba(255,110,0,.09) 52%, rgba(0,0,0,0) 78%);
+    opacity:0; transition: opacity .35s ease;
+    pointer-events:none; z-index:0;
+  }
+  .bg-glow.on{ opacity:1; }
+
+  /* listening bubbles (jab Nimu sun raha ho) */
+  .lb{
+    position:absolute;
+    width:3.4vmin; height:3.4vmin;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #ffffff, #6ff0e8 50%, #12a19d);
+    box-shadow:0 0 2vmin rgba(90,240,235,.95);
+    opacity:0; pointer-events:none;
+  }
+  .lb.l1{ left:44%; bottom:38%; }
+  .lb.l2{ left:56%; bottom:33%; width:2.6vmin; height:2.6vmin; }
+  .lb.l3{ left:34%; bottom:43%; width:2.2vmin; height:2.2vmin; }
+  .emo.listening .lb{ animation: bubbleUp 1.9s ease-in infinite; }
+  .emo.listening .lb.l2{ animation-delay:.6s; }
+  .emo.listening .lb.l3{ animation-delay:1.2s; }
+
+  /* debug: jo suna gaya (temporary) */
+  .heard{
+    position:fixed;
+    top: max(2vmin, env(safe-area-inset-top));
+    left:0; right:0;
+    text-align:center;
+    color:#9fd8e6;
+    font:700 3.2vmin/1.4 system-ui,-apple-system,sans-serif;
+    text-shadow:0 0 1.2vmin rgba(0,0,0,.8);
+    pointer-events:none;
+    z-index:60;
+  }
+
+  .hint{
+    position:fixed;
+    bottom: max(6vmin, env(safe-area-inset-bottom));
+    left:0; right:0;
+    text-align:center;
+    color:var(--hint);
+    font:500 3vmin/1.4 system-ui,-apple-system,sans-serif;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    opacity:0;
+    animation: hint 6s ease forwards;
+    pointer-events:none;
+  }
+  @keyframes hint{
+    0%{opacity:0;}
+    15%{opacity:1;}
+    70%{opacity:1;}
+    100%{opacity:0;}
+  }
+</style>
+</head>
+<body>
+  <div class="bg-glow" id="bgGlow"></div>
+  <div class="stage">
+  <div class="floor"></div>
+  <div class="shadow"></div>
+  <div class="emo" data-mood="neutral">
+    <div class="top">
+      <div class="band"></div>
+
+      <div class="ear left">
+        <span class="ear-pad"></span>
+        <span class="ear-accent"></span>
+      </div>
+
+      <div class="head">
+        <div class="screen">
+          <div class="marks">
+            <span class="mark flame"></span>
+            <span class="mark sparkle s1"></span>
+            <span class="mark sparkle s2"></span>
+            <span class="mark qmark">?</span>
+            <span class="mark zzz">z</span>
+            <span class="mark tear"></span>
+            <span class="zb b1">z</span>
+            <span class="zb b2">z</span>
+            <span class="zb b3">z</span>
+            <span class="lb l1"></span>
+            <span class="lb l2"></span>
+            <span class="lb l3"></span>
+            <span class="bubble b1">&#9829;</span>
+            <span class="bubble b2">&#9829;</span>
+            <span class="bubble b3">&#9829;</span>
+          </div>
+          <div class="eyes" data-eyes>
+            <div class="eye" data-eye>
+              <span class="e-block"></span>
+              <svg class="e-arc" viewBox="0 0 100 100" aria-hidden="true"><path d="M12 66 Q50 6 88 66" fill="none" stroke="var(--eye-2)" stroke-width="24" stroke-linecap="round"/></svg>
+              <span class="e-heart"></span>
+            </div>
+            <div class="eye" data-eye>
+              <span class="e-block"></span>
+              <svg class="e-arc" viewBox="0 0 100 100" aria-hidden="true"><path d="M12 66 Q50 6 88 66" fill="none" stroke="var(--eye-2)" stroke-width="24" stroke-linecap="round"/></svg>
+              <span class="e-heart"></span>
+            </div>
+          </div>
+          <span class="mouth"></span>
+        </div>
+        <span class="mic-dot" id="micDot"></span>
+      </div>
+
+      <div class="ear right">
+        <span class="ear-pad"></span>
+        <span class="ear-accent"></span>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="leg left">
+        <span class="thigh"></span>
+        <span class="foot"></span>
+      </div>
+      <div class="leg right">
+        <span class="thigh"></span>
+        <span class="foot"></span>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="mood-label" id="moodLabel"></div>
+  <div class="heard" id="heard">heard: —</div>
+  <div class="hint">tap to change mood</div>
+
+<script>
+(function(){
+  "use strict";
+  const emo      = document.querySelector(".emo");
+  const eyes     = Array.from(document.querySelectorAll("[data-eye]"));
+  const eyesBox  = document.querySelector("[data-eyes]");
+  const moodLabel= document.getElementById("moodLabel");
+
+  const rand = (min, max) => Math.random() * (max - min) + min;
+
+  /* ---------- sound (Web Audio synth — koi audio file nahi) ---------- */
+  const AC = window.AudioContext || window.webkitAudioContext;
+  let actx = null;
+  function audioUnlock(){
+    try{
+      if(!actx && AC) actx = new AC();
+      if(actx && actx.state === "suspended") actx.resume();
+      window.setTimeout(loadSnore, 300);
+    }catch(e){}
+  }
+  function tone(f1, f2, dur, type, vol){
+    if(!actx) return;
+    try{
+      const o = actx.createOscillator(), g = actx.createGain();
+      const t = actx.currentTime;
+      o.type = type || "sine";
+      o.frequency.setValueAtTime(f1, t);
+      if(f2 && f2 !== f1) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol || 0.14, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(actx.destination);
+      o.start(t); o.stop(t + dur + 0.03);
+    }catch(e){}
+  }
+  const SND = {
+    blip:   () => tone(620, 880, 0.12, "triangle", 0.10),
+    settle: () => tone(700, 560, 0.16, "sine", 0.08),
+    sleep:  () => tone(520, 230, 0.75, "sine", 0.13),
+    wake:   () => tone(360, 780, 0.34, "triangle", 0.13)
+  };
+
+  /* ---------- snore (source: snore_generator.py — JS port, browser me generate) ---------- */
+  let snoreBuf = null, snoreSrc = null, snoreStopT = null;
+  const SNORE_SR = 16000;
+  function biquad(sig, kind, freq, sr, q){
+    q = q || 0.707;
+    const w0 = 2*Math.PI*freq/sr, alpha = Math.sin(w0)/(2*q), cw = Math.cos(w0);
+    let b0, b1, b2;
+    if(kind === "lp"){ b0 = (1-cw)/2; b1 = 1-cw; b2 = (1-cw)/2; }
+    else if(kind === "hp"){ b0 = (1+cw)/2; b1 = -(1+cw); b2 = (1+cw)/2; }
+    else { b0 = alpha; b1 = 0; b2 = -alpha; }
+    let a0 = 1+alpha, a1 = -2*cw, a2 = 1-alpha;
+    b0/=a0; b1/=a0; b2/=a0; a1/=a0; a2/=a0;
+    const out = new Float32Array(sig.length);
+    let x1=0,x2=0,y1=0,y2=0;
+    for(let i=0;i<sig.length;i++){
+      const x = sig[i];
+      const y = b0*x + b1*x1 + b2*x2 - a1*y1 - a2*y2;
+      x2=x1; x1=x; y2=y1; y1=y;
+      out[i] = y;
+    }
+    return out;
+  }
+  function makeSnore(n, f0b, f0p, nz, soft){
+    const dt = 1/SNORE_SR;
+    let phase = 0;
+    const f0ph = Math.random()*6;
+    const tp = []; for(let k=0;k<6;k++) tp.push(Math.random()*0.3);
+    const tone = new Float32Array(n);
+    for(let i=0;i<n;i++){
+      const x = i/(n-1);
+      let f0 = f0b + (f0p-f0b)*Math.pow(Math.sin(Math.PI*x), 0.7);
+      f0 *= 1 + 0.015*Math.sin(2*Math.PI*3.0*(i*dt) + f0ph);
+      phase += 2*Math.PI*f0*dt;
+      let v = 0;
+      for(let k=1;k<=6;k++) v += (1/Math.pow(k,1.7))*Math.sin(k*phase + tp[k-1]);
+      tone[i] = v;
+    }
+    let pk = 1e-9; for(let i=0;i<n;i++) pk = Math.max(pk, Math.abs(tone[i]));
+    for(let i=0;i<n;i++) tone[i] /= pk;
+    const noise = new Float32Array(n);
+    for(let i=0;i<n;i++) noise[i] = Math.random()*2-1;
+    const sm = new Float32Array(n);
+    let acc = 0; const win = 14;
+    for(let i=0;i<n;i++){ acc += noise[i]; if(i>=win) acc -= noise[i-win]; sm[i] = acc/win; }
+    let np = 1e-9; for(let i=0;i<n;i++) np = Math.max(np, Math.abs(sm[i]));
+    for(let i=0;i<n;i++) sm[i] /= np;
+    const out = new Float32Array(n);
+    for(let i=0;i<n;i++){
+      const x = i/(n-1);
+      let env = Math.pow(Math.sin(Math.PI*x), 2);
+      env *= 1 + 0.04*Math.sin(2*Math.PI*5.0*(i*dt));
+      const breath = nz*sm[i]*Math.pow(Math.sin(Math.PI*x), 1.4);
+      out[i] = soft*env*((1-nz)*tone[i] + breath);
+    }
+    return out;
+  }
+  function buildSnoreBuffer(){
+    const total = Math.floor(SNORE_SR*11.0);
+    const out = new Float32Array(total);
+    const P = [
+      [1.60,1.10,0.78,150,190,0.26,0.95],
+      [1.45,1.30,0.72,148,185,0.25,0.92],
+      [1.70,1.00,0.80,152,195,0.27,0.97],
+      [1.40,1.35,0.68,146,182,0.24,0.90]
+    ];
+    let tc = 0.30;
+    for(const q of P){
+      const sl=q[0], pa=q[1], lo=q[2], fb=q[3], fp=q[4], nz=q[5], so=q[6];
+      const n = Math.floor(SNORE_SR*sl);
+      const seg = makeSnore(n, fb, fp, nz, so);
+      const fade = Math.floor(SNORE_SR*0.12);
+      for(let i=0;i<fade;i++){ const g = Math.pow(i/fade,1.5); seg[i]*=g; seg[n-1-i]*=g; }
+      const st = Math.floor(SNORE_SR*tc), en = Math.min(st+n, total);
+      for(let i=0;i<en-st;i++) out[st+i] += lo*seg[i];
+      tc += sl + pa;
+    }
+    let o = biquad(out, "hp", 190, SNORE_SR, 0.7);
+    o = biquad(o, "bp", 1150, SNORE_SR, 1.1);
+    o = biquad(o, "lp", 3800, SNORE_SR, 0.7);
+    o = biquad(o, "lp", 3400, SNORE_SR, 0.7);
+    const g = Math.floor(SNORE_SR*0.8);
+    for(let i=0;i<g;i++){ o[i] *= i/g; o[total-1-i] *= i/g; }
+    let pk = 1e-9; for(let i=0;i<total;i++) pk = Math.max(pk, Math.abs(o[i]));
+    const sc = 0.80/pk;
+    const buf = actx.createBuffer(1, total, SNORE_SR);
+    const ch = buf.getChannelData(0);
+    for(let i=0;i<total;i++) ch[i] = o[i]*sc;
+    return buf;
+  }
+  function loadSnore(){
+    if(snoreBuf || !actx) return;
+    try{ snoreBuf = buildSnoreBuffer(); }catch(e){}
+  }
+  function startSnore(){
+    if(!actx || !snoreBuf) return;
+    stopSnore();
+    try{
+      const src = actx.createBufferSource();
+      src.buffer = snoreBuf; src.loop = true;
+      const g = actx.createGain(); g.gain.value = 0.03;   /* final — max soft */
+      src.connect(g); g.connect(actx.destination);
+      src.start();
+      snoreSrc = src;
+      /* ~27 sec baad snore apne aap band ho jaati hai */
+      if(snoreStopT) window.clearTimeout(snoreStopT);
+      snoreStopT = window.setTimeout(stopSnore, 27000);
+    }catch(e){}
+  }
+  function stopSnore(){
+    if(snoreStopT){ window.clearTimeout(snoreStopT); snoreStopT = null; }
+    if(snoreSrc){ try{ snoreSrc.stop(); }catch(e){} snoreSrc = null; }
+  }
+
+  /* ---------- voice (TTS — wake pe greeting, English) ---------- */
+  let ttsVoice = null, gi = 0;
+  const GREETINGS = ["Hi! I'm Nimu", "Hey! I'm Nimu", "Hello! I'm Nimu"];
+  function pickVoice(){
+    if(!("speechSynthesis" in window)) return;
+    const vs = window.speechSynthesis.getVoices() || [];
+    if(!vs.length) return;
+    ttsVoice = vs.find(v => /en[-_]?in/i.test(v.lang))
+            || vs.find(v => /^en/i.test(v.lang))
+            || vs[0];
+  }
+  if("speechSynthesis" in window){
+    pickVoice();
+    window.speechSynthesis.onvoiceschanged = pickVoice;
+  }
+  function speak(text){
+    if(!("speechSynthesis" in window)) return;
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      if(ttsVoice) u.voice = ttsVoice;
+      u.lang = (ttsVoice && ttsVoice.lang) || "en-IN";
+      u.pitch = 1.35;    /* cute, thoda high */
+      u.rate = 1.05;
+      u.volume = 1;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  function greet(){ speak(GREETINGS[gi++ % GREETINGS.length]); }
+
+  /* ---------- STT (sunna) — mic hamesha on; wake word ke baad command ---------- */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const micDot = document.getElementById("micDot");
+  const heard = document.getElementById("heard");
+  /* status: pehle hi bata do ki mic chalega ya nahi */
+  const APP_VER = "v53";
+  function proto(){ return (location.protocol || "").replace(":",""); }
+  function micStatus(){
+    if(!heard) return;
+    const tag = APP_VER + " \u00b7 " + proto() + " \u00b7 ";
+    if(!SR) heard.textContent = tag + "mic: NOT supported (Chrome use karo)";
+    else if(!window.isSecureContext) heard.textContent = tag + "mic: HTTPS chahiye (file:// pe nahi)";
+    else heard.textContent = tag + "mic: ready \u2014 kuch bolo";
+  }
+  let recog = null, recogWanted = false, attentive = false, attentiveT = null;
+  /* wake words: "hii nimu" / "hey nimu" / "hello nimu" / "Nimu" / "hello" / "hi" / "hey" */
+  const WAKE = /\b(nimu|neemu|nimoo|nemo|ni\s?mu|hello|hii?|hey)\b/i;
+  const bgGlow = document.getElementById("bgGlow");
+  function setListening(on){
+    if(micDot) micDot.classList.toggle("on", !!on);
+    if(bgGlow) bgGlow.classList.toggle("on", !!on);
+    emo.classList.toggle("listening", !!on);
+  }
+  function dotOn(){
+    setListening(true);
+    if(attentiveT) window.clearTimeout(attentiveT);
+    attentiveT = window.setTimeout(() => { attentive = false; dotOff(); }, 10000);
+  }
+  function dotOff(){
+    setListening(false);
+    if(attentiveT){ window.clearTimeout(attentiveT); attentiveT = null; }
+  }
+  const COMMANDS = [
+    { re: /\bhow are you\b/i,      act: () => { speak("I'm good, thank you!"); } },
+    { re: /\bwhat.*your name\b/i,  act: () => { speak("I'm Nimu"); } },
+    { re: /\bsleep\b/i,            act: () => { sleep(); } },
+    { re: /\b(wake up|wakeup)\b/i, act: () => { if(asleep) wake(); } },
+    { re: /\bbye\b/i,              act: () => { setMood("sad", true); speak("Bye! See you soon"); } }
+  ];
+  function norm(t){ return String(t||"").toLowerCase().replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim(); }
+  let lastTxt = "";
+  function handleSpeech(txt){
+    const t = norm(txt);
+    if(!t) return;
+    if(attentive){
+      for(const c of COMMANDS){ if(c.re.test(t)){ c.act(); attentive = false; dotOff(); return; } }
+    }
+    if(WAKE.test(t)){ attentive = true; dotOn(); return; }
+  }
+  function startListening(){
+    if(!SR || recogWanted) return;
+    recogWanted = true;
+    try{
+      recog = new SR();
+      recog.continuous = true;
+      recog.interimResults = true;
+      recog.lang = "en-IN";
+      recog.onstart = () => { if(heard) heard.textContent = APP_VER + " \u00b7 " + proto() + " \u00b7 mic: listening\u2026 bolo"; };
+      recog.onend = () => { if(recogWanted && !asleep) window.setTimeout(restartListening, 80); };
+      recog.onerror = (e) => { recogWanted = false; const er = (e && e.error) || "?"; if(heard) heard.textContent = APP_VER + " \u00b7 mic error: " + er + (er === "not-allowed" ? " (Allow karo)" : ""); };
+      recog.onresult = (e) => {
+        let interim = "", fin = "";
+        for(let i = e.resultIndex; i < e.results.length; i++){
+          const r = e.results[i];
+          if(r.isFinal) fin += r[0].transcript; else interim += r[0].transcript;
+        }
+        const last = e.results[e.results.length - 1];
+        const show = (last && last[0]) ? String(last[0].transcript).trim() : "";
+        if(heard && show) heard.textContent = APP_VER + " \u00b7 heard: " + show;
+        if(fin){ handleSpeech(fin); lastTxt = ""; return; }          /* final: hamesha process */
+        const t = norm(interim);
+        if(t && t !== lastTxt){ lastTxt = t; handleSpeech(t); }      /* interim: turant react */
+      };
+      recog.start();
+    }catch(e){ recogWanted = false; }
+  }
+  function restartListening(){
+    if(!recogWanted || asleep || !recog) return;
+    try{ recog.start(); }catch(e){}
+  }
+  function stopListening(){
+    recogWanted = false;
+    try{ if(recog) recog.stop(); }catch(e){}
+    attentive = false; dotOff();
+  }
+
+  let asleep = false;
+
+  /* ---------- blink ---------- */
+  let blinkTimer = null;
+  function blink(){
+    if(asleep) return;
+    eyes.forEach(e => e.classList.add("closed"));
+    window.setTimeout(() => eyes.forEach(e => e.classList.remove("closed")), rand(95, 135));
+  }
+  function scheduleBlink(){
+    window.clearTimeout(blinkTimer);
+    blinkTimer = window.setTimeout(() => {
+      blink();
+      if (Math.random() < 0.28) window.setTimeout(blink, rand(180, 260));
+      scheduleBlink();
+    }, rand(2400, 6400));
+  }
+
+  /* ---------- idle: eyes look around as a pair ---------- */
+  function driftEyes(){
+    const x = rand(-1.6, 1.6);
+    const y = rand(-1.0, 1.0);
+    eyesBox.style.transform = "translate(" + x + "vmin," + y + "vmin)";
+    window.setTimeout(driftEyes, rand(1800, 4600));
+  }
+
+  /* ---------- sleep / wake ---------- */
+  let sleepTimer = null, settleTimer = null;
+  const SLEEP_AFTER = 25000;                 /* 25s bina interaction → so jaata hai */
+  const SETTLE_AFTER = SLEEP_AFTER - 1000;   /* 24s → pehle neutral (calm) ho jaata hai */
+  function sleep(){
+    if(asleep) return;
+    asleep = true;
+    emo.classList.add("asleep");
+    eyes.forEach(e => e.classList.remove("closed"));
+    SND.sleep();
+    stopListening();                                        /* so jane par listening band */
+    window.setTimeout(() => { if(asleep) startSnore(); }, 1500);
+  }
+  function wake(){
+    if(!asleep) return;
+    asleep = false;
+    emo.classList.remove("asleep");
+    blink();
+    SND.wake();
+    stopSnore();
+    startListening();                                      /* jaagte hi listening chalu */
+    window.setTimeout(() => { if(!asleep) greet(); }, 420);   /* greeting bole */
+  }
+  function resetSleepTimer(){
+    window.clearTimeout(sleepTimer);
+    window.clearTimeout(settleTimer);
+    /* 24s: chup-chaap neutral ho jao (koi label nahi) */
+    settleTimer = window.setTimeout(() => { if(!asleep){ setMood("neutral", false); SND.settle(); } }, SETTLE_AFTER);
+    /* 25s: so jao */
+    sleepTimer = window.setTimeout(sleep, SLEEP_AFTER);
+  }
+
+  /* ---------- moods ---------- */
+  const MOODS = ["neutral","happy","excited","love","surprised","angry","sad","sleepy","bored","confused"];
+  let mi = 0;
+  let labelTimer = null;
+
+  function setMood(name, showLabel){
+    emo.dataset.mood = name;
+    if(showLabel){
+      moodLabel.textContent = name;
+      moodLabel.classList.add("show");
+      window.clearTimeout(labelTimer);
+      labelTimer = window.setTimeout(() => moodLabel.classList.remove("show"), 1500);
+    }
+  }
+
+  /* ---------- tap = next mood ---------- */
+  document.body.addEventListener("pointerdown", () => {
+    audioUnlock();
+    startListening();
+    resetSleepTimer();
+    if(asleep){ wake(); return; }      /* soya hua hai → tap = jagana */
+    mi = (mi + 1) % MOODS.length;
+    setMood(MOODS[mi], true);
+    SND.blip();
+  }, { passive:true });
+
+  /* ---------- start ---------- */
+  setMood("neutral", false);
+  scheduleBlink();
+  window.setTimeout(blink, 900);
+  window.setTimeout(driftEyes, 1000);
+  resetSleepTimer();
+  micStatus();
+  startListening();
+})();
+</script>
+</body>
+</html>
