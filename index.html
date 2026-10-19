@@ -841,7 +841,7 @@
   const heard = document.getElementById("heard");
   const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v62";
+  const APP_VER = "v63";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
@@ -891,9 +891,9 @@
     { re: /\b(cheer up|be happy|smile)\b/i,                           act: () => { setMood("happy", true); speak("Yay! I'm happy!"); } },
     { re: /\bi m sad\b|\bi am sad\b/i,                                act: () => { setMood("love", true); speak("Don't be sad. I'm here with you!"); } },
     /* --- sleep / bye --- */
-    { re: /\bsleep\b/i,                                               act: () => { sleep(); } },
+    { re: /\bsleep\b/i,                                  end: true, act: () => { sleep(); } },
     { re: /\b(wake up|wakeup)\b/i,                                    act: () => { if(asleep) wake(); } },
-    { re: /\b(bye|goodbye|good bye)\b/i,                              act: () => { setMood("sad", true); speak("Bye! See you soon"); } }
+    { re: /\b(bye|goodbye|good bye)\b/i,                 end: true, act: () => { setMood("sad", true); speak("Bye! See you soon"); } }
   ];
   const JOKES = [
     "Why did the robot go to school? To get a little smarter!",
@@ -907,17 +907,28 @@
   function handleSpeech(txt, isFinal){
     const t = norm(txt);
     if(!t) return;
+    /* window khuli hai → command check karo (sirf final par, warna double reply) */
+    if(attentive){
+      resetSleepTimer();                             /* user baat kar raha hai → jaagta raho */
+      if(isFinal){
+        for(const c of COMMANDS){
+          if(c.re.test(t)){
+            c.act();
+            if(c.end || asleep){ attentive = false; dotOff(); }   /* baat-cheet khatam (bye / sleep) */
+            else { dotOn(); }                                     /* window extend → baat-cheet chalti rahe */
+            return;
+          }
+        }
+      }
+    }
     /* wake word → attentive window kholo ya extend karo */
     if(WAKE.test(t)){
       if(!attentive) setMood(Math.random() < 0.5 ? "happy" : "excited", false);   /* wake pe khush ho jaye */
       resetSleepTimer();
       attentive = true; dotOn(); return;
     }
-    if(attentive){
-      resetSleepTimer();                             /* user baat kar raha hai → jaagta raho */
-      for(const c of COMMANDS){ if(c.re.test(t)){ c.act(); attentive = false; dotOff(); return; } }
-      if(isFinal){ speak(pick(FALLBACK)); }          /* kuch samajh na aaya → cute reply (final par hi) */
-    }
+    /* attentive hai par kuch samajh na aaya → cute reply (final par) + window extend */
+    if(attentive && isFinal){ speak(pick(FALLBACK)); dotOn(); }
   }
 
   /* status line chhota helper */
