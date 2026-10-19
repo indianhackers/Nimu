@@ -823,7 +823,7 @@
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const heard = document.getElementById("heard");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v56";
+  const APP_VER = "v57";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
@@ -832,7 +832,9 @@
     else if(!window.isSecureContext) heard.textContent = tag + "mic: HTTPS chahiye (file:// pe nahi)";
     else heard.textContent = tag + "mic: ready \u2014 kuch bolo";
   }
-  let recog = null, recogWanted = false, attentive = false, attentiveT = null;
+  let recog = null, recogWanted = false, recogRunning = false;
+  let restartT = null, restartDelay = 300;          /* transient error ke baad backoff */
+  let attentive = false, attentiveT = null;
   /* wake words: "hii nimu" / "hey nimu" / "hello nimu" / "Nimu" / "hello" / "hi" / "hey" */
   const WAKE = /\b(nimu|neemu|nimoo|nemo|ni\s?mu|hello|hii?|hey)\b/i;
   function setListening(on){
@@ -867,42 +869,87 @@
       attentive = true; dotOn(); return;
     }
   }
+
+  /* status line chhota helper */
+  function micLine(msg){ if(heard) heard.textContent = APP_VER + " \u00b7 " + proto() + " \u00b7 " + msg; }
+
+  /* Ek naya recogniser banao — har (re)start par fresh instance,
+     taaki purani state se InvalidStateError na aaye. */
+  function makeRecog(){
+    const r = new SR();
+    r.continuous = true;
+    r.interimResults = true;
+    r.lang = "en-IN";
+    r.maxAlternatives = 1;
+    r.onstart = () => {
+      recogRunning = true;
+      restartDelay = 300;                            /* safal start → backoff reset */
+      micLine("mic: listening\u2026 bolo");
+    };
+    r.onend = () => {
+      recogRunning = false;
+      if(recogWanted && !asleep) scheduleRestart();  /* Chrome silence par khud band karta hai → wapas chalu */
+    };
+    r.onerror = (e) => {
+      recogRunning = false;
+      const er = (e && e.error) || "?";
+      if(er === "not-allowed" || er === "service-not-allowed"){
+        recogWanted = false;                         /* permission band — retry ka koi fayda nahi */
+        micLine("mic error: " + er + " (Allow karo)");
+        return;
+      }
+      /* no-speech / aborted / network / audio-capture — transient; onend restart karega */
+      micLine("mic: listening\u2026 (" + er + ")");
+    };
+    r.onresult = (e) => {
+      let interim = "", fin = "";
+      for(let i = e.resultIndex; i < e.results.length; i++){
+        const res = e.results[i];
+        if(res.isFinal) fin += res[0].transcript; else interim += res[0].transcript;
+      }
+      const last = e.results[e.results.length - 1];
+      const show = (last && last[0]) ? String(last[0].transcript).trim() : "";
+      if(heard && show) heard.textContent = APP_VER + " \u00b7 heard: " + show;
+      if(fin){ handleSpeech(fin); lastTxt = ""; return; }          /* final: hamesha process */
+      const t = norm(interim);
+      if(t && t !== lastTxt){ lastTxt = t; handleSpeech(t); }      /* interim: turant react */
+    };
+    return r;
+  }
+  function scheduleRestart(){
+    if(restartT) return;                             /* ek hi restart pending rakho */
+    const d = restartDelay;
+    restartDelay = Math.min(restartDelay + 400, 4000);   /* backoff: 300ms → 4s */
+    restartT = window.setTimeout(() => { restartT = null; restartListening(); }, d);
+  }
   function startListening(){
     if(!SR || recogWanted) return;
     recogWanted = true;
-    try{
-      recog = new SR();
-      recog.continuous = true;
-      recog.interimResults = true;
-      recog.lang = "en-IN";
-      recog.onstart = () => { if(heard) heard.textContent = APP_VER + " \u00b7 " + proto() + " \u00b7 mic: listening\u2026 bolo"; };
-      recog.onend = () => { if(recogWanted && !asleep) window.setTimeout(restartListening, 80); };
-      recog.onerror = (e) => { recogWanted = false; const er = (e && e.error) || "?"; if(heard) heard.textContent = APP_VER + " \u00b7 mic error: " + er + (er === "not-allowed" ? " (Allow karo)" : ""); };
-      recog.onresult = (e) => {
-        let interim = "", fin = "";
-        for(let i = e.resultIndex; i < e.results.length; i++){
-          const r = e.results[i];
-          if(r.isFinal) fin += r[0].transcript; else interim += r[0].transcript;
-        }
-        const last = e.results[e.results.length - 1];
-        const show = (last && last[0]) ? String(last[0].transcript).trim() : "";
-        if(heard && show) heard.textContent = APP_VER + " \u00b7 heard: " + show;
-        if(fin){ handleSpeech(fin); lastTxt = ""; return; }          /* final: hamesha process */
-        const t = norm(interim);
-        if(t && t !== lastTxt){ lastTxt = t; handleSpeech(t); }      /* interim: turant react */
-      };
-      recog.start();
-    }catch(e){ recogWanted = false; }
+    restartDelay = 300;
+    if(restartT){ window.clearTimeout(restartT); restartT = null; }
+    restartListening();
   }
   function restartListening(){
-    if(!recogWanted || asleep || !recog) return;
-    try{ recog.start(); }catch(e){}
+    if(!recogWanted || asleep || !SR) return;
+    if(recogRunning) return;                          /* pehle se chal raha hai */
+    try{
+      recog = makeRecog();                            /* fresh instance */
+      recog.start();
+    }catch(e){
+      scheduleRestart();                              /* start fail → thoda ruk kar dobara */
+    }
   }
   function stopListening(){
     recogWanted = false;
-    try{ if(recog) recog.stop(); }catch(e){}
+    if(restartT){ window.clearTimeout(restartT); restartT = null; }
+    try{ if(recog) recog.abort(); }catch(e){}
+    recogRunning = false;
     attentive = false; dotOff();
   }
+  /* tab wapas saamne aane par mic dobara chalu (Chrome background me band kar deta hai) */
+  document.addEventListener("visibilitychange", () => {
+    if(!document.hidden && recogWanted && !asleep && !recogRunning) scheduleRestart();
+  });
 
   let asleep = false;
 
