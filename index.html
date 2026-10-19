@@ -814,6 +814,12 @@
       window.speechSynthesis.speak(u);
     }catch(e){}
   }
+  /* Nimu ki awaaz turant band (barge-in — user ne bolna shuru kiya) */
+  function stopSpeaking(){
+    try{ window.speechSynthesis.cancel(); }catch(e){}
+    speakToken++;                                    /* purani utterance ka onend ignore */
+    speaking = false;
+  }
   function greet(){ speak(GREETINGS[gi++ % GREETINGS.length]); }
 
   /* ---------- STT (sunna) — mic hamesha on; wake word ke baad command ---------- */
@@ -821,7 +827,7 @@
   const heard = document.getElementById("heard");
   const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v64";
+  const APP_VER = "v65";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
@@ -884,31 +890,62 @@
   function pick(a){ return a[Math.floor(Math.random() * a.length)]; }
   function norm(t){ return String(t||"").toLowerCase().replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim(); }
   let lastTxt = "";
+  /* command sunne ke baad Nimu itne ms ruk kar jawab deta hai (tune karne ke liye yahi badlo) */
+  const ANSWER_DELAY = 1500;
+  let pendingAction = null, pendingT = null;
+  function cancelPendingAnswer(){
+    if(pendingT){ window.clearTimeout(pendingT); pendingT = null; }
+    pendingAction = null;
+  }
+  /* jawab ko ANSWER_DELAY ke liye schedule karo; naya speech aaye to timer aage khisak jaata hai */
+  function scheduleAnswer(fn){
+    pendingAction = fn;
+    if(pendingT) window.clearTimeout(pendingT);
+    pendingT = window.setTimeout(() => {
+      pendingT = null;
+      const f = pendingAction; pendingAction = null;
+      if(f) f();
+    }, ANSWER_DELAY);
+  }
+
   function handleSpeech(txt, isFinal){
     const t = norm(txt);
     if(!t) return;
-    /* window khuli hai → command check karo (sirf final par, warna double reply) */
+
+    /* barge-in: Nimu bol raha ho aur user bole → turant chup ho kar sunna shuru karo */
+    if(speaking) stopSpeaking();
+
+    /* user abhi bol raha hai → pichhle command ka jawab thoda aage khiska do */
+    if(pendingT) scheduleAnswer(pendingAction);
+
     if(attentive){
       resetSleepTimer();                             /* user baat kar raha hai → jaagta raho */
+      let hit = null;
       if(isFinal){
-        for(const c of COMMANDS){
-          if(c.re.test(t)){
-            c.act();
-            if(c.end || asleep){ attentive = false; dotOff(); }   /* baat-cheet khatam (bye / sleep) */
-            else { dotOn(); }                                     /* window extend → baat-cheet chalti rahe */
-            return;
-          }
-        }
+        for(const c of COMMANDS){ if(c.re.test(t)){ hit = c; break; } }
       }
+      if(hit){
+        /* turant mat bolo — ANSWER_DELAY ruk kar, taaki user apni baat pooori kar le */
+        scheduleAnswer(() => {
+          hit.act();
+          if(hit.end || asleep){ attentive = false; dotOff(); }   /* baat-cheet khatam (bye / sleep) */
+          else { dotOn(); }                                       /* window extend → baat-cheet chalti rahe */
+        });
+        return;
+      }
+      if(WAKE.test(t)){ dotOn(); return; }           /* wake word → window extend */
+      if(isFinal && !pendingT){                      /* kuch samajh na aaya → cute reply (thoda ruk kar) */
+        scheduleAnswer(() => { speak(pick(FALLBACK)); dotOn(); });
+      }
+      return;
     }
-    /* wake word → attentive window kholo ya extend karo */
+
+    /* wake word → attentive window kholo */
     if(WAKE.test(t)){
       if(!attentive) setMood(Math.random() < 0.5 ? "happy" : "excited", false);   /* wake pe khush ho jaye */
       resetSleepTimer();
       attentive = true; dotOn(); return;
     }
-    /* attentive hai par kuch samajh na aaya → cute reply (final par) + window extend */
-    if(attentive && isFinal){ speak(pick(FALLBACK)); dotOn(); }
   }
 
   /* status line chhota helper */
@@ -984,6 +1021,7 @@
     if(restartT){ window.clearTimeout(restartT); restartT = null; }
     try{ if(recog) recog.abort(); }catch(e){}
     recogRunning = false;
+    cancelPendingAnswer();
     attentive = false; dotOff();
   }
   /* tab wapas saamne aane par mic dobara chalu (Chrome background me band kar deta hai) */
