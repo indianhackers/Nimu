@@ -636,8 +636,8 @@
 
   <div class="mood-label" id="moodLabel"></div>
   <div class="debug" id="debug">
-    <div class="d-row"><span class="d-tag">Sun raha - listening</span><span class="d-val" id="heard">—</span></div>
-    <div class="d-row"><span class="d-tag">Bol raha - Nimu</span><span class="d-val" id="said">—</span></div>
+    <div class="d-row"><span class="d-tag">listening</span><span class="d-val" id="heard">—</span></div>
+    <div class="d-row"><span class="d-tag">Nimu</span><span class="d-val" id="said">—</span></div>
   </div>
   <div class="hint">tap to change mood</div>
 
@@ -841,7 +841,7 @@
   const heard = document.getElementById("heard");
   const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v60";
+  const APP_VER = "v61";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
