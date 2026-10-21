@@ -549,6 +549,13 @@
   .debug .d-tag{ opacity:.6; letter-spacing:.08em; font-size:2vmin; min-width:12vmin; text-align:right; }
   .debug .d-val{ color:#eaf7fb; max-width:76vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
+  /* temp mute controls (sound / voice) */
+  .ctrls{ position:fixed; top: max(2vmin, env(safe-area-inset-top)); right: max(2vmin, env(safe-area-inset-right));
+          display:flex; gap:1.2vmin; z-index:70; }
+  .ctrls button{ font:600 2.4vmin/1 system-ui,-apple-system,sans-serif; color:#cfeef7; background:rgba(10,30,40,.55);
+                 border:1px solid rgba(160,220,235,.35); border-radius:1.2vmin; padding:1vmin 1.6vmin;
+                 cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .ctrls button.off{ color:#7c93a0; background:rgba(10,30,40,.25); text-decoration:line-through; }
 </style>
 </head>
 <body>
@@ -621,6 +628,11 @@
     <div class="d-row"><span class="d-tag">Nimu</span><span class="d-val" id="said">—</span></div>
     <div class="d-row"><span class="d-tag">cloud</span><span class="d-val" id="cloud">local only</span></div>
   </div>
+  <div class="ctrls" id="ctrls">
+    <button id="btnSound" type="button">sound</button>
+    <button id="btnVoice" type="button">voice</button>
+    <button id="btnMic" type="button">mic</button>
+  </div>
 
 <script>
 (function(){
@@ -635,6 +647,7 @@
   /* ---------- sound (Web Audio synth — koi audio file nahi) ---------- */
   const AC = window.AudioContext || window.webkitAudioContext;
   let actx = null;
+  let soundMuted = false, voiceMuted = false, micMuted = false;   /* temp mute (sound / voice / mic) */
   function audioUnlock(){
     try{
       if(!actx && AC) actx = new AC();
@@ -643,7 +656,7 @@
     }catch(e){}
   }
   function tone(f1, f2, dur, type, vol){
-    if(!actx) return;
+    if(!actx || soundMuted) return;
     try{
       const o = actx.createOscillator(), g = actx.createGain();
       const t = actx.currentTime;
@@ -663,6 +676,25 @@
     sleep:  () => tone(520, 230, 0.75, "sine", 0.13),
     wake:   () => tone(360, 780, 0.34, "triangle", 0.13)
   };
+  /* ---------- temp mute controls (sound / voice) ---------- */
+  function updateMuteUI(){
+    const bs = document.getElementById("btnSound"), bv = document.getElementById("btnVoice"), bm = document.getElementById("btnMic");
+    if(bs) bs.classList.toggle("off", soundMuted);
+    if(bv) bv.classList.toggle("off", voiceMuted);
+    if(bm) bm.classList.toggle("off", micMuted);
+  }
+  function setupMuteButtons(){
+    const bs = document.getElementById("btnSound"), bv = document.getElementById("btnVoice"), bm = document.getElementById("btnMic");
+    if(bs) bs.addEventListener("click", () => { soundMuted = !soundMuted; if(soundMuted) stopSnore(); updateMuteUI(); });
+    if(bv) bv.addEventListener("click", () => { voiceMuted = !voiceMuted; if(voiceMuted) stopSpeaking(); updateMuteUI(); });
+    if(bm) bm.addEventListener("click", () => {
+      micMuted = !micMuted;
+      if(micMuted){ stopListening(); if(heard) heard.textContent = "mic: muted"; }   /* mic band */
+      else { startListening(); if(heard) heard.textContent = "mic: ready"; }         /* mic chalu */
+      updateMuteUI();
+    });
+    updateMuteUI();
+  }
 
   /* ---------- snore (source: snore_generator.py — JS port, browser me generate) ---------- */
   let snoreBuf = null, snoreSrc = null, snoreStopT = null;
@@ -758,7 +790,7 @@
     try{ snoreBuf = buildSnoreBuffer(); }catch(e){}
   }
   function startSnore(){
-    if(!actx || !snoreBuf) return;
+    if(!actx || !snoreBuf || soundMuted) return;
     stopSnore();
     try{
       const src = actx.createBufferSource();
@@ -795,6 +827,7 @@
     window.speechSynthesis.onvoiceschanged = pickVoice;
   }
   function speak(text){
+    if(voiceMuted){ if(said) said.textContent = text; return; }   /* voice muted → sirf dikhao, bolo mat */
     if(!("speechSynthesis" in window)) return;
     try{
       window.speechSynthesis.cancel();
@@ -832,7 +865,7 @@
   const heard = document.getElementById("heard");
   const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v72";
+  const APP_VER = "v74";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
@@ -1133,7 +1166,7 @@
     restartT = window.setTimeout(() => { restartT = null; restartListening(); }, d);
   }
   function startListening(){
-    if(!SR || recogWanted) return;
+    if(!SR || recogWanted || micMuted) return;
     recogWanted = true;
     restartDelay = 300;
     if(restartT){ window.clearTimeout(restartT); restartT = null; }
@@ -1273,6 +1306,7 @@
   loadSession();
   cloudStatus(cloudReady() ? "syncing\u2026" : "cloud: not set");
   if(cloudReady()) cloudPull();
+  setupMuteButtons();
   micStatus();
   startListening();
 })();
