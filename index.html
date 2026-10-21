@@ -619,6 +619,7 @@
   <div class="debug" id="debug">
     <div class="d-row"><span class="d-tag">listening</span><span class="d-val" id="heard">—</span></div>
     <div class="d-row"><span class="d-tag">Nimu</span><span class="d-val" id="said">—</span></div>
+    <div class="d-row"><span class="d-tag">cloud</span><span class="d-val" id="cloud">local only</span></div>
   </div>
 
 <script>
@@ -821,14 +822,17 @@
     speakToken++;                                    /* purani utterance ka onend ignore */
     speaking = false;
   }
-  function greet(){ speak(GREETINGS[gi++ % GREETINGS.length]); }
+  function greet(){
+    if(MEM.name) speak("Hi " + MEM.name + "! I'm Nimu.");
+    else speak(GREETINGS[gi++ % GREETINGS.length]);
+  }
 
   /* ---------- STT (sunna) — mic hamesha on; wake word ke baad command ---------- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const heard = document.getElementById("heard");
   const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v67";
+  const APP_VER = "v72";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
@@ -854,7 +858,134 @@
     if(attentiveT){ window.clearTimeout(attentiveT); attentiveT = null; }
     if(!asleep && !speaking) resetSleepTimer();   /* engagement khatam → 25s countdown yahin se */
   }
+  /* ---------- memory (5.1) — local-first + cloud sync ---------- */
+  const MEM_KEY = "nimu.memory";
+  const memDefault = () => ({ v:1, name:null, likes:[], facts:[],
+                              stats:{ interactions:0, firstSeen:Date.now(), lastSeen:Date.now() }, updatedAt:0 });
+  function loadMemory(){
+    try{
+      const raw = localStorage.getItem(MEM_KEY);
+      if(raw){
+        const m = JSON.parse(raw) || {};
+        const d = memDefault();
+        return Object.assign(d, m, { stats: Object.assign(d.stats, m.stats || {}) });
+      }
+    }catch(e){}
+    return memDefault();
+  }
+  let MEM = loadMemory();
+  function saveMemory(){
+    MEM.stats.lastSeen = Date.now();
+    MEM.updatedAt = Date.now();
+    try{ localStorage.setItem(MEM_KEY, JSON.stringify(MEM)); }catch(e){}
+    cloudMarkDirty();
+  }
+  function titleCase(str){ return String(str||"").replace(/\b[a-z]/g, c => c.toUpperCase()); }
+  function addFact(txt){ txt = String(txt||"").trim(); if(txt && !MEM.facts.some(f => f.text === txt)){ MEM.facts.push({ text: txt, at: Date.now() }); saveMemory(); } }
+  function addLike(txt){ txt = String(txt||"").trim(); if(txt && !MEM.likes.includes(txt)){ MEM.likes.push(txt); saveMemory(); } }
+  function aboutMe(){
+    const parts = [];
+    if(MEM.name) parts.push("Your name is " + MEM.name);
+    if(MEM.likes.length) parts.push("you like " + MEM.likes.join(", "));
+    if(MEM.facts.length) parts.push("I remember that " + MEM.facts.map(f => f.text).join("; "));
+    return parts.length ? (parts.join(". ") + ".") : "I don't know much about you yet.";
+  }
+  function clearMemory(){ const fs = MEM.stats.firstSeen; MEM = memDefault(); MEM.stats.firstSeen = fs; saveMemory(); }
+  function bumpInteraction(){ MEM.stats.interactions = (MEM.stats.interactions || 0) + 1; saveMemory(); }
+
+  /* ---------- cloud sync (Supabase) — 5.1b ---------- */
+  /* Neeche apni Supabase Project URL + Publishable (anon) key daalo.
+     Publishable key public hoti hai (RLS protect karta hai), par SECRET key
+     kabhi yahan mat daalo. (Khaali chhodne par Nimu sirf local chalti hai.) */
+  const SUPABASE = { url: "", key: "", table: "nimu_memory" };
+  const SESS_KEY = "nimu.cloud.session";
+  let cloudSession = null, cloudDirty = false, cloudT = null, cloudBusy = false;
+
+  function cloudReady(){ return !!(SUPABASE.url && SUPABASE.key); }
+  function cloudStatus(txt){ const el = document.getElementById("cloud"); if(el) el.textContent = txt; }
+  function cloudHeaders(extra){ return Object.assign({ apikey: SUPABASE.key, "Content-Type": "application/json" }, extra || {}); }
+
+  function loadSession(){ try{ const raw = localStorage.getItem(SESS_KEY); if(raw) cloudSession = JSON.parse(raw); }catch(e){} }
+  function saveSession(){ try{ localStorage.setItem(SESS_KEY, JSON.stringify(cloudSession)); }catch(e){} }
+  function clearSession(){ cloudSession = null; try{ localStorage.removeItem(SESS_KEY); }catch(e){} }
+  function setSession(j){
+    cloudSession = { access_token: j.access_token, refresh_token: j.refresh_token,
+                     user_id: (j.user && j.user.id) || (cloudSession && cloudSession.user_id),
+                     expires_at: Date.now() + ((j.expires_in || 3600) * 1000) };
+    saveSession(); return cloudSession;
+  }
+  /* anon user banao (ya maujooda session use karo) */
+  async function cloudSignIn(){
+    if(cloudSession && cloudSession.access_token) return cloudSession;
+    const res = await fetch(SUPABASE.url + "/auth/v1/signup", { method: "POST", headers: cloudHeaders(), body: "{}" });
+    if(!res.ok) throw new Error("signin " + res.status);
+    return setSession(await res.json());
+  }
+  async function cloudRefresh(){
+    if(!(cloudSession && cloudSession.refresh_token)) return cloudSignIn();
+    const res = await fetch(SUPABASE.url + "/auth/v1/token?grant_type=refresh_token", {
+      method: "POST", headers: cloudHeaders(), body: JSON.stringify({ refresh_token: cloudSession.refresh_token }) });
+    if(!res.ok){ clearSession(); return cloudSignIn(); }
+    return setSession(await res.json());
+  }
+  async function cloudToken(){
+    const s = await cloudSignIn();
+    if(s.expires_at && Date.now() > s.expires_at - 60000) return (await cloudRefresh()).access_token;
+    return s.access_token;
+  }
+
+  function cloudMarkDirty(){
+    if(!cloudReady()){ cloudStatus("cloud: not set"); return; }
+    cloudDirty = true;
+    if(cloudT) window.clearTimeout(cloudT);
+    cloudT = window.setTimeout(cloudPush, 1500);   /* debounced push */
+  }
+  /* memory ko cloud par upsert karo */
+  async function cloudPush(){
+    if(!cloudReady() || cloudBusy) return;
+    cloudBusy = true; cloudStatus("syncing\u2026");
+    try{
+      const s = await cloudSignIn();
+      const tok = await cloudToken();
+      const row = { user_id: s.user_id, data: MEM, updated_at: new Date(MEM.updatedAt || Date.now()).toISOString() };
+      const res = await fetch(SUPABASE.url + "/rest/v1/" + SUPABASE.table + "?on_conflict=user_id", {
+        method: "POST",
+        headers: cloudHeaders({ Authorization: "Bearer " + tok, Prefer: "resolution=merge-duplicates" }),
+        body: JSON.stringify(row) });
+      if(!res.ok) throw new Error("push " + res.status);
+      cloudDirty = false; cloudStatus("synced");
+    }catch(e){ cloudStatus("offline"); }
+    finally{ cloudBusy = false; }
+  }
+  /* cloud se memory laao; cloud naya ho to adopt karo, local naya ho to push */
+  async function cloudPull(){
+    if(!cloudReady()) return;
+    cloudStatus("syncing\u2026");
+    try{
+      const s = await cloudSignIn();
+      const tok = await cloudToken();
+      const res = await fetch(SUPABASE.url + "/rest/v1/" + SUPABASE.table + "?select=data,updated_at&user_id=eq." + s.user_id, {
+        headers: cloudHeaders({ Authorization: "Bearer " + tok }) });
+      if(!res.ok) throw new Error("pull " + res.status);
+      const rows = await res.json();
+      if(rows && rows.length && rows[0].data){
+        const remote = rows[0].data;
+        if((remote.updatedAt || 0) > (MEM.updatedAt || 0)){ MEM = remote; try{ localStorage.setItem(MEM_KEY, JSON.stringify(MEM)); }catch(e){} cloudStatus("synced"); }
+        else if((MEM.updatedAt || 0) > (remote.updatedAt || 0)){ cloudMarkDirty(); }
+        else { cloudStatus("synced"); }
+      } else { cloudMarkDirty(); }
+    }catch(e){ cloudStatus("offline"); }
+  }
+  window.addEventListener("online", () => { if(cloudReady() && cloudDirty) cloudPush(); });
+
   const COMMANDS = [
+    /* --- memory (5.1) --- */
+    { re: /\bmy name is ([a-z]+(?: [a-z]+)?)/i,        act: (m) => { MEM.name = titleCase(m[1]); saveMemory(); speak("Nice to meet you, " + MEM.name + "!"); } },
+    { re: /\bwhat.*my name\b/i,                        act: () => { speak(MEM.name ? ("Your name is " + MEM.name + ".") : "I don't know your name yet. Say: my name is ..."); } },
+    { re: /\bi like ([a-z]+(?: [a-z]+){0,2})/i,        act: (m) => { addLike(m[1]); speak("Got it! You like " + m[1] + "."); } },
+    { re: /\bremember (?:that )?([a-z0-9][a-z0-9 ]{1,60})/i, act: (m) => { addFact(m[1].trim()); speak("Okay, I will remember that."); } },
+    { re: /\bwhat do you know about me\b/i,            act: () => { speak(aboutMe()); } },
+    { re: /\bforget (?:everything|all|about me)\b/i,   act: () => { clearMemory(); speak("Okay, I forgot everything about you."); } },
     /* --- pehchaan / madad --- */
     { re: /\b(what can you do|what do you do|help)\b/i,               act: () => { speak("You can say: how are you, tell me a joke, what time is it, sing a song, and more!"); } },
     { re: /\b(how do you feel|are you happy|how are you feeling)\b/i, act: () => { speak("I feel happy when you talk to me!"); } },
@@ -921,14 +1052,15 @@
 
     if(attentive){
       resetSleepTimer();                             /* user baat kar raha hai → jaagta raho */
-      let hit = null;
+      let hit = null, m = null;
       if(isFinal){
-        for(const c of COMMANDS){ if(c.re.test(t)){ hit = c; break; } }
+        for(const c of COMMANDS){ const mm = c.re.exec(t); if(mm){ hit = c; m = mm; break; } }
       }
       if(hit){
+        bumpInteraction();
         /* turant mat bolo — ANSWER_DELAY ruk kar, taaki user apni baat pooori kar le */
         scheduleAnswer(() => {
-          hit.act();
+          hit.act(m);
           if(hit.end || asleep){ attentive = false; dotOff(); }   /* baat-cheet khatam (bye / sleep) */
           else { dotOn(); }                                       /* window extend → baat-cheet chalti rahe */
         });
@@ -1129,6 +1261,18 @@
   window.setTimeout(driftEyes, 1000);
   resetSleepTimer();
   startSleepWatch();
+  /* ek-baar ka cloud setup: page ko "?setup=cloud" ke saath kholo → URL + key poochh lega
+     (key tumhare browser me save hoti hai, file/repo me nahi) */
+  if(/[?&]setup=cloud/.test(location.search)){
+    const u = window.prompt("Supabase Project URL (https://xxxx.supabase.co):");
+    const k = window.prompt("Supabase Publishable (anon) key:");
+    if(u && k){ try{ localStorage.setItem("nimu.cloud.config", JSON.stringify({ url: u.trim(), key: k.trim() })); window.alert("Saved! Ab page reload karo."); }catch(e){} }
+  }
+  /* config override: localStorage me "nimu.cloud.config" ho to wahi use karo */
+  try{ const c = JSON.parse(localStorage.getItem("nimu.cloud.config") || "null"); if(c && c.url && c.key){ SUPABASE.url = c.url; SUPABASE.key = c.key; } }catch(e){}
+  loadSession();
+  cloudStatus(cloudReady() ? "syncing\u2026" : "cloud: not set");
+  if(cloudReady()) cloudPull();
   micStatus();
   startListening();
 })();
