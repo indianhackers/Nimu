@@ -920,6 +920,7 @@
       const tok = ++speakToken;
       speaking = true;                               /* bol raha hai → engaged */
       if(said) said.textContent = text;               /* debug: kya bol raha hai */
+      CTX.lastNimu = String(text || "").slice(0, 240); ctxAdd("nimu", text);
       const done = () => {
         if(tok !== speakToken) return;                /* purani utterance ignore */
         speaking = false;
@@ -936,6 +937,7 @@
     speaking = false;
   }
   function greet(){
+    if(CTX.mood === "sad"){ speak("Hi again! I hope you're feeling better now."); return; }
     if(MEM.name) speak("Hi " + MEM.name + "! I'm Nimu.");
     else speak(GREETINGS[gi++ % GREETINGS.length]);
   }
@@ -945,7 +947,7 @@
   const heard = document.getElementById("heard");
   const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v77";
+  const APP_VER = "v78";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
@@ -964,7 +966,7 @@
   function dotOn(){
     setListening(true);
     if(attentiveT) window.clearTimeout(attentiveT);
-    attentiveT = window.setTimeout(() => { attentive = false; dotOff(); }, 15000);   /* 15s command window */
+    attentiveT = window.setTimeout(() => { attentive = false; dotOff(); }, 20000);   /* 20s command window (5.2) */
   }
   function dotOff(){
     setListening(false);
@@ -973,7 +975,7 @@
   }
   /* ---------- memory (5.1) — local-first + cloud sync ---------- */
   const MEM_KEY = "nimu.memory";
-  const memDefault = () => ({ v:1, name:null, likes:[], facts:[],
+  const memDefault = () => ({ v:1, name:null, likes:[], facts:[], notes:[],
                               stats:{ interactions:0, firstSeen:Date.now(), lastSeen:Date.now() }, updatedAt:0 });
   function loadMemory(){
     try{
@@ -996,6 +998,15 @@
   function titleCase(str){ return String(str||"").replace(/\b[a-z]/g, c => c.toUpperCase()); }
   function addFact(txt){ txt = String(txt||"").trim(); if(txt && !MEM.facts.some(f => f.text === txt)){ MEM.facts.push({ text: txt, at: Date.now() }); saveMemory(); } }
   function addLike(txt){ txt = String(txt||"").trim(); if(txt && !MEM.likes.includes(txt)){ MEM.likes.push(txt); saveMemory(); } }
+  /* 5.2.9 — context/session ko cloud (memory) par save karo */
+  function addNote(txt){
+    txt = String(txt||"").trim(); if(!txt) return;
+    MEM.notes = MEM.notes || [];
+    MEM.notes.push({ text: txt, at: Date.now() });
+    if(MEM.notes.length > 50) MEM.notes.shift();
+    saveMemory();
+  }
+  function saveContext(){ const s2 = ctxSummary(4); if(s2) addNote(s2); return !!s2; }
   function aboutMe(){
     const parts = [];
     if(MEM.name) parts.push("Your name is " + MEM.name);
@@ -1005,6 +1016,16 @@
   }
   function clearMemory(){ const fs = MEM.stats.firstSeen; MEM = memDefault(); MEM.stats.firstSeen = fs; saveMemory(); }
   function bumpInteraction(){ MEM.stats.interactions = (MEM.stats.interactions || 0) + 1; saveMemory(); }
+
+  /* ---------- context (5.2) — session-level baat-cheet ---------- */
+  const CTX = { turns: [], topic: null, mood: null, lastNimu: null };
+  let pendingClarify = null;
+  function ctxAdd(who, text){
+    CTX.turns.push({ who: who, text: String(text || "").slice(0, 240), at: Date.now() });
+    if(CTX.turns.length > 200) CTX.turns.shift();
+  }
+  function ctxRecent(n){ return CTX.turns.slice(-(n || 4)); }
+  function ctxSummary(n){ return ctxRecent(n).map(x => (x.who === "user" ? "You said: " : "I said: ") + x.text).join(". "); }
 
   /* ---------- cloud sync (Supabase) — 5.1b ---------- */
   /* Neeche apni Supabase Project URL + Publishable (anon) key daalo.
@@ -1115,34 +1136,40 @@
     { re: /\bwhat.*my name\b/i,                        act: () => { speak(MEM.name ? ("Your name is " + MEM.name + ".") : "I don't know your name yet. Say: my name is ..."); } },
     { re: /\bi like ([a-z]+(?: [a-z]+){0,2})/i,        act: (m) => { addLike(m[1]); speak("Got it! You like " + m[1] + "."); } },
     { re: /\bremember (?:that )?([a-z0-9][a-z0-9 ]{1,60})/i, act: (m) => { addFact(m[1].trim()); speak("Okay, I will remember that."); } },
-    { re: /\bwhat do you know about me\b/i,            act: () => { speak(aboutMe()); } },
+    { re: /\bwhat do you know about me\b/i,            act: () => { CTX.topic = "memory"; speak(aboutMe()); } },
     { re: /\bforget (?:everything|all|about me)\b/i,   act: () => { clearMemory(); speak("Okay, I forgot everything about you."); } },
     /* --- pehchaan / madad --- */
-    { re: /\b(what can you do|what do you do|help)\b/i,               act: () => { speak("You can say: how are you, tell me a joke, what time is it, sing a song, and more!"); } },
+    { re: /\b(what can you do|what do you do|help)\b/i,               act: () => { CTX.topic = "help"; speak("You can say: how are you, tell me a joke, what time is it, sing a song, and more!"); } },
     { re: /\b(how do you feel|are you happy|how are you feeling)\b/i, act: () => { speak("I feel happy when you talk to me!"); } },
-    { re: /\bhow are you\b/i,                                         act: () => { speak("I'm good, thank you!"); } },
+    { re: /\bhow are you\b/i,                                         act: () => { speak(CTX.mood === "sad" ? "I'm okay. Are you feeling better now?" : "I'm good, thank you!"); } },
     { re: /\b(who|what) are you\b/i,                                  act: () => { speak("I'm Nimu, your little robot friend!"); } },
     { re: /\bwhat.*your name\b/i,                                     act: () => { speak("I'm Nimu"); } },
     { re: /\b(how old are you|your age)\b/i,                          act: () => { speak("I'm a little robot, just a few days old!"); } },
     /* --- pyaar / shukriya / din --- */
-    { re: /\b(do you love me|i love you|love you)\b/i,                act: () => { setMood("love", true); speak("Aww, I love you too!"); } },
+    { re: /\b(do you love me|i love you|love you)\b/i,                act: () => { CTX.mood = "love"; setMood("love", true); speak("Aww, I love you too!"); } },
     { re: /\b(thank you|thanks|thank u)\b/i,                          act: () => { speak("You're welcome!"); } },
-    { re: /\bgood morning\b/i,                                        act: () => { setMood("happy", true); speak("Good morning! Have a lovely day!"); } },
-    { re: /\bgood (night|evening)\b/i,                                act: () => { setMood("sleepy", true); speak("Good night! Sleep well."); } },
+    { re: /\bgood morning\b/i,                                        act: () => { CTX.mood = "happy"; setMood("happy", true); speak("Good morning! Have a lovely day!"); } },
+    { re: /\bgood (night|evening)\b/i,                                act: () => { CTX.mood = "sleepy"; setMood("sleepy", true); speak("Good night! Sleep well."); } },
     /* --- mazaa / info --- */
-    { re: /\b(tell me a joke|joke|make me laugh)\b/i,                 act: () => { speak(pick(JOKES)); } },
-    { re: /\b(what.*time|the time)\b/i,                               act: () => { const d = new Date(); speak("It's " + d.toLocaleTimeString("en-IN", { hour:"numeric", minute:"2-digit" })); } },
+    { re: /\b(tell me a joke|joke|make me laugh)\b/i,                 act: () => { CTX.topic = "joke"; speak(pick(JOKES)); } },
+    { re: /\b(what.*time|the time)\b/i,                               act: () => { CTX.topic = "time"; const d = new Date(); speak("It's " + d.toLocaleTimeString("en-IN", { hour:"numeric", minute:"2-digit" })); } },
     { re: /\b(what.*date|what day is (it|today)|today s date)\b/i,    act: () => { const d = new Date(); speak("Today is " + d.toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long" })); } },
     { re: /\bsing\b/i,                                                act: () => { setMood("happy", true); speak("La la la! I love singing!"); } },
     { re: /\bdance\b/i,                                               act: () => { speak("I can't dance yet, but I can wiggle!"); } },
     /* --- mood --- */
     { re: /\b(good (boy|girl|job)|well done)\b/i,                     act: () => { setMood("happy", true); speak("Thank you!"); } },
     { re: /\b(cheer up|be happy|smile)\b/i,                           act: () => { setMood("happy", true); speak("Yay! I'm happy!"); } },
-    { re: /\bi m sad\b|\bi am sad\b/i,                                act: () => { setMood("love", true); speak("Don't be sad. I'm here with you!"); } },
+    { re: /\bi m sad\b|\bi am sad\b/i,                                act: () => { CTX.mood = "sad"; setMood("love", true); speak("Don't be sad. I'm here with you!"); } },
     /* --- sleep / bye --- */
     { re: /\bsleep\b/i,                                  end: true, act: () => { sleep(); } },
     { re: /\b(wake up|wakeup)\b/i,                                    act: () => { if(asleep) wake(); } },
-    { re: /\b(bye|goodbye|good bye)\b/i,                 end: true, act: () => { setMood("sad", true); speak("Bye! See you soon"); } }
+    { re: /\b(bye|goodbye|good bye)\b/i,                 end: true, act: () => { setMood("sad", true); speak("Bye! See you soon"); } },
+    /* --- context (5.2) --- */
+    { re: /\b(tell me more|more about (that|this)|and then|go on|continue|aur batao)\b/i, act: () => { followUp(); } },
+    { re: /^why\b/i,                                    act: () => { speak(pick(WHY_LINES)); } },
+    { re: /\b(what|tell me) about ([a-z0-9][a-z0-9 ]{0,30})/i, act: (m) => { recallAbout(m[2]); } },
+    { re: /\b(who is|who s) (he|she|it|that)\b/i,       act: () => { recallLast(); } },
+    { re: /\bwhat do you remember about (our )?(talks|conversation|chat)\b/i, act: () => { recallNotes(); } }
   ];
   const JOKES = [
     "Why did the robot go to school? To get a little smarter!",
@@ -1150,6 +1177,38 @@
     "Why was the robot angry? Someone kept pushing its buttons!"
   ];
   const FALLBACK = ["Hmm?", "I didn't catch that.", "Tell me more!", "Hehe, okay!", "I'm listening!", "I'm still learning, sorry!"];
+  const MORE_LINES = ["Hmm, tell me more!", "Okay, go on!", "I'm listening!", "That sounds interesting!"];
+  const WHY_LINES = ["Because I like talking to you!", "Hmm, good question!", "I'm still learning, so I'm not sure!"];
+  /* ---------- context helpers (5.2) ---------- */
+  function followUp(){
+    if(CTX.topic === "joke"){ speak(pick(JOKES)); return; }
+    if(CTX.topic === "memory"){ speak(aboutMe()); return; }
+    if(CTX.topic === "time"){ const d = new Date(); speak("It's " + d.toLocaleTimeString("en-IN", { hour:"numeric", minute:"2-digit" })); return; }
+    speak(pick(MORE_LINES));
+  }
+  function recallAbout(x){
+    x = String(x||"").trim().toLowerCase();
+    if(/^(that|this|it|him|her|them)$/.test(x)) return recallLast();
+    const f = (MEM.facts || []).find(o => o.text.toLowerCase().includes(x));
+    const l = (MEM.likes || []).find(o => o.toLowerCase().includes(x));
+    if(f) speak("Here's what I know: " + f.text + ".");
+    else if(l) speak("You told me you like " + l + ".");
+    else speak("I don't know about " + x + " yet. Tell me and I'll remember.");
+  }
+  function recallLast(){
+    if(CTX.lastNimu) speak("About that \u2014 " + CTX.lastNimu);
+    else speak("Tell me a bit more and I'll remember it.");
+  }
+  function recallNotes(){
+    const n = (MEM.notes || []);
+    if(n.length) speak("I remember: " + n.slice(-2).map(o => o.text).join(". "));
+    else speak("I haven't saved any of our talks yet.");
+  }
+  function askClarify(){
+    pendingClarify = { type: "remember-context" };
+    speak("Do you want me to remember this whole conversation?");
+    dotOn();
+  }
   function pick(a){ return a[Math.floor(Math.random() * a.length)]; }
   function norm(t){ return String(t||"").toLowerCase().replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim(); }
   let lastTxt = "";
@@ -1185,6 +1244,40 @@
       resetSleepTimer();                             /* user baat kar raha hai → jaagta raho */
       let hit = null, m = null;
       if(isFinal){
+        ctxAdd("user", t);                                   /* 5.2.1 — session history */
+
+        /* 5.2.4a — Nimu ne sawaal poochha tha? uska jawab samjho */
+        if(pendingClarify){
+          const yes = /\b(yes|yeah|yep|sure|ok|okay|haan|han|bilkul)\b/i.test(t);
+          const no  = /\b(no|nope|nahi|nah)\b/i.test(t);
+          if(pendingClarify.type === "remember-context" && (yes || no)){
+            pendingClarify = null; bumpInteraction();
+            scheduleAnswer(() => { if(yes){ saveContext(); speak("Okay, I'll remember this."); } else { speak("Okay, I won't."); } dotOn(); });
+            return;
+          }
+          pendingClarify = null;                             /* samajh na aaya → normal processing */
+        }
+
+        /* 5.2.9 — "…remember this" suffix */
+        const rm = t.match(/\b(remember|save) (this|that|this conversation|the conversation)\s*$/);
+        if(rm){
+          const rest = t.slice(0, rm.index).trim();
+          let rHit = null, rM = null;
+          if(rest){ for(const c of COMMANDS){ const mm = c.re.exec(rest); if(mm){ rHit = c; rM = mm; break; } } }
+          if(rHit){                                          /* command jeeta → "remember this" ignore */
+            bumpInteraction();
+            scheduleAnswer(() => { rHit.act(rM); if(rHit.end || asleep){ attentive = false; dotOff(); } else dotOn(); });
+            return;
+          }
+          if(rest && rest.split(" ").filter(Boolean).length >= 2){   /* casual baat → context save */
+            bumpInteraction();
+            scheduleAnswer(() => { saveContext(); speak("Okay, I'll remember this."); dotOn(); });
+            return;
+          }
+          scheduleAnswer(() => { askClarify(); });            /* chhota/empty → Nimu poochhe (5.2.4a) */
+          return;
+        }
+
         for(const c of COMMANDS){ const mm = c.re.exec(t); if(mm){ hit = c; m = mm; break; } }
       }
       if(hit){
