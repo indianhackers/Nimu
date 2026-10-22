@@ -572,6 +572,7 @@
                      width:5.6vmin; height:5.6vmin; padding:1.1vmin; background:none; border:none;
                      color:#8fdff2; cursor:pointer; opacity:.85; }
   .auth-pass button:active{ opacity:1; }
+  .auth-pass button svg{ width:100%; height:100%; display:block; }
   .auth-row{ display:flex; gap:2vmin; }
   .auth-row button{ flex:1; font:600 2.6vmin/1 system-ui,sans-serif; color:#04141a; background:#8fdff2;
                     border:none; border-radius:1.2vmin; padding:2.2vmin 1vmin; cursor:pointer; }
@@ -944,7 +945,7 @@
   const heard = document.getElementById("heard");
   const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v76";
+  const APP_VER = "v77";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
