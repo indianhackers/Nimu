@@ -566,6 +566,12 @@
   .auth input{ font:400 2.6vmin/1 system-ui,sans-serif; color:#e8f6fb; background:rgba(0,0,0,.32);
                border:1px solid rgba(160,220,235,.3); border-radius:1.2vmin; padding:2vmin 2.2vmin; outline:none; }
   .auth input::placeholder{ color:#6f8894; }
+  .auth-pass{ position:relative; display:flex; }
+  .auth-pass input{ width:100%; padding-right:9vmin; }
+  .auth-pass button{ position:absolute; right:1.2vmin; top:50%; transform:translateY(-50%);
+                     width:5.6vmin; height:5.6vmin; padding:1.1vmin; background:none; border:none;
+                     color:#8fdff2; cursor:pointer; opacity:.85; }
+  .auth-pass button:active{ opacity:1; }
   .auth-row{ display:flex; gap:2vmin; }
   .auth-row button{ flex:1; font:600 2.6vmin/1 system-ui,sans-serif; color:#04141a; background:#8fdff2;
                     border:none; border-radius:1.2vmin; padding:2.2vmin 1vmin; cursor:pointer; }
@@ -653,7 +659,15 @@
     <div class="auth-box">
       <div class="auth-title">NIMU</div>
       <input id="authEmail" type="email" placeholder="email" autocomplete="email" />
-      <input id="authPass" type="password" placeholder="password" autocomplete="current-password" />
+      <div class="auth-pass">
+        <input id="authPass" type="password" placeholder="password" autocomplete="current-password" />
+        <button id="authEye" type="button" aria-label="password dikhao">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>
+            <line id="eyeSlash" x1="3" y1="3" x2="21" y2="21" style="display:none"/>
+          </svg>
+        </button>
+      </div>
       <div class="auth-row">
         <button id="authIn" type="button">Sign in</button>
         <button id="authUp" type="button" class="ghost">Sign up</button>
@@ -734,7 +748,13 @@
   function setupAuthUI(){
     const em = document.getElementById("authEmail"), pw = document.getElementById("authPass");
     const bi = document.getElementById("authIn"), bu = document.getElementById("authUp");
+    const eye = document.getElementById("authEye"), slash = document.getElementById("eyeSlash");
     if(!em || !pw || !bi || !bu) return;
+    if(eye) eye.addEventListener("click", () => {
+      const show = pw.type === "password";          /* password dikha rahe hain? */
+      pw.type = show ? "text" : "password";
+      if(slash) slash.style.display = show ? "" : "none";   /* eye-off line */
+    });
     const get = () => ({ email: (em.value || "").trim(), password: pw.value || "" });
     bi.addEventListener("click", async () => {
       const c = get();
@@ -924,7 +944,7 @@
   const heard = document.getElementById("heard");
   const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v75";
+  const APP_VER = "v76";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
