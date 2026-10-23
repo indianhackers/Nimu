@@ -560,9 +560,11 @@
          background:rgba(10,30,40,.82); border:1px solid rgba(160,220,235,.3); border-radius:1.6vmin;
          box-shadow:0 .8vmin 3vmin rgba(0,0,0,.45); }
   .menu.open{ display:flex; }
-  .menu button{ font:600 2.5vmin/1 system-ui,-apple-system,sans-serif; color:#cfeef7; background:rgba(10,30,40,.55);
-                border:1px solid rgba(160,220,235,.35); border-radius:1.2vmin; padding:1.2vmin 1.8vmin;
-                cursor:pointer; text-align:left; min-width:16vmin; -webkit-tap-highlight-color:transparent; }
+  .menu button{ display:flex; align-items:center; gap:1.6vmin; font:600 2.5vmin/1 system-ui,-apple-system,sans-serif;
+                color:#cfeef7; background:rgba(10,30,40,.55); border:1px solid rgba(160,220,235,.35);
+                border-radius:1.2vmin; padding:1.2vmin 1.8vmin; cursor:pointer; text-align:left;
+                min-width:18vmin; -webkit-tap-highlight-color:transparent; }
+  .menu button svg{ width:3.2vmin; height:3.2vmin; flex:none; }
   .menu button.off{ color:#7c93a0; background:rgba(10,30,40,.25); text-decoration:line-through; }
   /* ---------- auth overlay (email sign-in) ---------- */
   .auth{ position:fixed; inset:0; z-index:200; display:none; align-items:center; justify-content:center;
@@ -664,10 +666,22 @@
     </svg>
   </button>
   <div class="menu" id="menu">
-    <button id="btnSound" type="button">sound</button>
-    <button id="btnVoice" type="button">voice</button>
-    <button id="btnMic" type="button">mic</button>
-    <button id="btnOut" type="button">exit</button>
+    <button id="btnSound" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h3l5 4V5L7 9H4z"/><path d="M16 8a4 4 0 0 1 0 8"/></svg>
+      <span>Sound</span>
+    </button>
+    <button id="btnVoice" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8 8 0 0 1-8 8H7l-5 4V11.5a8 8 0 0 1 8-8h3a8 8 0 0 1 8 8z"/></svg>
+      <span>Voice</span>
+    </button>
+    <button id="btnMic" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
+      <span>Mic</span>
+    </button>
+    <button id="btnOut" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      <span>Sign out</span>
+    </button>
   </div>
   <div class="auth" id="auth">
     <div class="auth-box">
@@ -703,7 +717,10 @@
   /* ---------- sound (Web Audio synth — koi audio file nahi) ---------- */
   const AC = window.AudioContext || window.webkitAudioContext;
   let actx = null;
-  let soundMuted = false, voiceMuted = false, micMuted = false;   /* temp mute (sound / voice / mic) */
+  let soundMuted = false, voiceMuted = false, micMuted = false;   /* mute (sound / voice / mic) */
+  const MUTE_KEY = "nimu.mute";                                   /* setting reload ke baad bhi rahe */
+  function loadMute(){ try{ const m = JSON.parse(localStorage.getItem(MUTE_KEY) || "null"); if(m){ soundMuted = !!m.sound; voiceMuted = !!m.voice; micMuted = !!m.mic; } }catch(e){} }
+  function saveMute(){ try{ localStorage.setItem(MUTE_KEY, JSON.stringify({ sound: soundMuted, voice: voiceMuted, mic: micMuted })); }catch(e){} }
   function audioUnlock(){
     try{
       if(!actx && AC) actx = new AC();
@@ -741,13 +758,13 @@
   }
   function setupMuteButtons(){
     const bs = document.getElementById("btnSound"), bv = document.getElementById("btnVoice"), bm = document.getElementById("btnMic");
-    if(bs) bs.addEventListener("click", () => { soundMuted = !soundMuted; if(soundMuted) stopSnore(); updateMuteUI(); });
-    if(bv) bv.addEventListener("click", () => { voiceMuted = !voiceMuted; if(voiceMuted) stopSpeaking(); updateMuteUI(); });
+    if(bs) bs.addEventListener("click", () => { soundMuted = !soundMuted; if(soundMuted) stopSnore(); updateMuteUI(); saveMute(); });
+    if(bv) bv.addEventListener("click", () => { voiceMuted = !voiceMuted; if(voiceMuted) stopSpeaking(); updateMuteUI(); saveMute(); });
     if(bm) bm.addEventListener("click", () => {
       micMuted = !micMuted;
       if(micMuted){ stopListening(); if(heard) heard.textContent = "mic: muted"; }   /* mic band */
       else { startListening(); if(heard) heard.textContent = "mic: ready"; }         /* mic chalu */
-      updateMuteUI();
+      updateMuteUI(); saveMute();
     });
     const bo = document.getElementById("btnOut");
     if(bo) bo.addEventListener("click", () => {
@@ -976,7 +993,7 @@
   const heard = document.getElementById("heard");
   const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v80";
+  const APP_VER = "v81";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
@@ -1161,45 +1178,97 @@
 
   const COMMANDS = [
     /* --- memory (5.1) --- */
-    { re: /\bmy name is ([a-z]+(?: [a-z]+)?)/i,        act: (m) => { MEM.name = titleCase(m[1]); saveMemory(); speak("Nice to meet you, " + MEM.name + "!"); } },
-    { re: /\bwhat.*my name\b/i,                        act: () => { speak(MEM.name ? ("Your name is " + MEM.name + ".") : "I don't know your name yet. Say: my name is ..."); } },
-    { re: /\bi like ([a-z]+(?: [a-z]+){0,2})/i,        act: (m) => { addLike(m[1]); speak("Got it! You like " + m[1] + "."); } },
-    { re: /\bremember (?:that )?([a-z0-9][a-z0-9 ]{1,60})/i, act: (m) => { addFact(m[1].trim()); speak("Okay, I will remember that."); } },
-    { re: /\bwhat do you know about me\b/i,            act: () => { CTX.topic = "memory"; speak(aboutMe()); } },
-    { re: /\bforget (?:everything|all|about me)\b/i,   act: () => { clearMemory(); speak("Okay, I forgot everything about you."); } },
+    { caps:true, re: /\bmy name is ([a-z]+(?: [a-z]+)?)/i,        act: (m) => { MEM.name = titleCase(m[1]); saveMemory(); speak("Nice to meet you, " + MEM.name + "!"); } },
+    { re: /\bwhat.*my name\b/i, keys: ["what is my name","whats my name","do you know my name"], act: () => { speak(MEM.name ? ("Your name is " + MEM.name + ".") : "I don't know your name yet. Say: my name is ..."); } },
+    { caps:true, re: /\bi like ([a-z]+(?: [a-z]+){0,2})/i,        act: (m) => { addLike(m[1]); speak("Got it! You like " + m[1] + "."); } },
+    { caps:true, re: /\bremember (?:that )?([a-z0-9][a-z0-9 ]{1,60})/i, act: (m) => { addFact(m[1].trim()); speak("Okay, I will remember that."); } },
+    { re: /\bwhat do you know about me\b/i, keys: ["what do you know about me","what do you know","tell me about me"], act: () => { CTX.topic = "memory"; speak(aboutMe()); } },
+    { re: /\bforget (?:everything|all|about me)\b/i, keys: ["forget everything","forget all","forget about me"], act: () => { clearMemory(); speak("Okay, I forgot everything about you."); } },
     /* --- pehchaan / madad --- */
-    { re: /\b(what can you do|what do you do|help)\b/i,               act: () => { CTX.topic = "help"; speak("You can say: how are you, tell me a joke, what time is it, sing a song, and more!"); } },
-    { re: /\b(how do you feel|are you happy|how are you feeling)\b/i, act: () => { speak("I feel happy when you talk to me!"); } },
-    { re: /\bhow are you\b/i,                                         act: () => { speak(CTX.mood === "sad" ? "I'm okay. Are you feeling better now?" : "I'm good, thank you!"); } },
-    { re: /\b(who|what) are you\b/i,                                  act: () => { speak("I'm Nimu, your little robot friend!"); } },
-    { re: /\bwhat.*your name\b/i,                                     act: () => { speak("I'm Nimu"); } },
-    { re: /\b(how old are you|your age)\b/i,                          act: () => { speak("I'm a little robot, just a few days old!"); } },
+    { re: /\b(what can you do|what do you do|help)\b/i, keys: ["what can you do","what do you do","help me","help"], act: () => { CTX.topic = "help"; speak("You can say: how are you, tell me a joke, what time is it, sing a song, and more!"); } },
+    { re: /\b(how do you feel|are you happy|how are you feeling)\b/i, keys: ["how do you feel","are you happy","how are you feeling"], act: () => { speak("I feel happy when you talk to me!"); } },
+    { re: /\bhow are you\b/i, keys: ["how are you","how r u","how are u","hows it going","how is it going","how do you do"], act: () => { speak(CTX.mood === "sad" ? "I'm okay. Are you feeling better now?" : "I'm good, thank you!"); } },
+    { re: /\b(who|what) are you\b/i, keys: ["who are you","what are you"], act: () => { speak("I'm Nimu, your little robot friend!"); } },
+    { re: /\bwhat.*your name\b/i, keys: ["what is your name","whats your name","your name"], act: () => { speak("I'm Nimu"); } },
+    { re: /\b(how old are you|your age)\b/i, keys: ["how old are you","your age"], act: () => { speak("I'm a little robot, just a few days old!"); } },
     /* --- pyaar / shukriya / din --- */
-    { re: /\b(do you love me|i love you|love you)\b/i,                act: () => { CTX.mood = "love"; setMood("love", true); speak("Aww, I love you too!"); } },
-    { re: /\b(thank you|thanks|thank u)\b/i,                          act: () => { speak("You're welcome!"); } },
-    { re: /\bgood morning\b/i,                                        act: () => { CTX.mood = "happy"; setMood("happy", true); speak("Good morning! Have a lovely day!"); } },
-    { re: /\bgood (night|evening)\b/i,                                act: () => { CTX.mood = "sleepy"; setMood("sleepy", true); speak("Good night! Sleep well."); } },
+    { re: /\b(do you love me|i love you|love you)\b/i, keys: ["i love you","do you love me","love you"], act: () => { CTX.mood = "love"; setMood("love", true); speak("Aww, I love you too!"); } },
+    { re: /\b(thank you|thanks|thank u)\b/i, keys: ["thank you","thanks","thank u"], act: () => { speak("You're welcome!"); } },
+    { re: /\bgood morning\b/i, keys: ["good morning"], act: () => { CTX.mood = "happy"; setMood("happy", true); speak("Good morning! Have a lovely day!"); } },
+    { re: /\bgood (night|evening)\b/i, keys: ["good night","good evening"], act: () => { CTX.mood = "sleepy"; setMood("sleepy", true); speak("Good night! Sleep well."); } },
     /* --- mazaa / info --- */
-    { re: /\b(tell me a joke|joke|make me laugh)\b/i,                 act: () => { CTX.topic = "joke"; speak(pick(JOKES)); } },
-    { re: /\b(what.*time|the time)\b/i,                               act: () => { CTX.topic = "time"; const d = new Date(); speak("It's " + d.toLocaleTimeString("en-IN", { hour:"numeric", minute:"2-digit" })); } },
-    { re: /\b(what.*date|what day is (it|today)|today s date)\b/i,    act: () => { const d = new Date(); speak("Today is " + d.toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long" })); } },
-    { re: /\bsing\b/i,                                                act: () => { setMood("happy", true); speak("La la la! I love singing!"); } },
-    { re: /\bdance\b/i,                                               act: () => { speak("I can't dance yet, but I can wiggle!"); } },
+    { re: /\b(tell me a joke|joke|make me laugh)\b/i, keys: ["tell me a joke","joke","make me laugh","say something funny","tell a joke"], act: () => { CTX.topic = "joke"; speak(pick(JOKES)); } },
+    { re: /\b(what.*time|the time)\b/i, keys: ["what time is it","the time","whats the time","what is the time"], act: () => { CTX.topic = "time"; const d = new Date(); speak("It's " + d.toLocaleTimeString("en-IN", { hour:"numeric", minute:"2-digit" })); } },
+    { re: /\b(what.*date|what day is (it|today)|today s date)\b/i, keys: ["what is the date","whats the date","what day is it","what day is today","todays date"], act: () => { const d = new Date(); speak("Today is " + d.toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long" })); } },
+    { re: /\bsing\b/i, keys: ["sing","sing a song","song"], act: () => { setMood("happy", true); speak("La la la! I love singing!"); } },
+    { re: /\bdance\b/i, keys: ["dance"], act: () => { speak("I can't dance yet, but I can wiggle!"); } },
     /* --- mood --- */
-    { re: /\b(good (boy|girl|job)|well done)\b/i,                     act: () => { setMood("happy", true); speak("Thank you!"); } },
-    { re: /\b(cheer up|be happy|smile)\b/i,                           act: () => { setMood("happy", true); speak("Yay! I'm happy!"); } },
-    { re: /\bi m sad\b|\bi am sad\b/i,                                act: () => { CTX.mood = "sad"; setMood("love", true); speak("Don't be sad. I'm here with you!"); } },
+    { re: /\b(good (boy|girl|job)|well done)\b/i, keys: ["good boy","good girl","good job","well done"], act: () => { setMood("happy", true); speak("Thank you!"); } },
+    { re: /\b(cheer up|be happy|smile)\b/i, keys: ["cheer up","be happy","smile"], act: () => { setMood("happy", true); speak("Yay! I'm happy!"); } },
+    { re: /\bi m sad\b|\bi am sad\b/i, keys: ["i am sad","i m sad","im sad","i feel sad"], act: () => { CTX.mood = "sad"; setMood("love", true); speak("Don't be sad. I'm here with you!"); } },
     /* --- sleep / bye --- */
-    { re: /\bsleep\b/i,                                  end: true, act: () => { sleep(); } },
-    { re: /\b(wake up|wakeup)\b/i,                                    act: () => { if(asleep) wake(); } },
-    { re: /\b(bye|goodbye|good bye)\b/i,                 end: true, act: () => { setMood("sad", true); speak("Bye! See you soon"); } },
+    { re: /\bsleep\b/i, keys: ["sleep","go to sleep"], end: true, act: () => { sleep(); } },
+    { re: /\b(wake up|wakeup)\b/i, keys: ["wake up","wakeup"], act: () => { if(asleep) wake(); } },
+    { re: /\b(bye|goodbye|good bye)\b/i, keys: ["bye","goodbye","good bye","see you"], end: true, act: () => { setMood("sad", true); speak("Bye! See you soon"); } },
     /* --- context (5.2) --- */
-    { re: /\b(tell me more|more about (that|this)|and then|go on|continue|aur batao)\b/i, act: () => { followUp(); } },
-    { re: /^why\b/i,                                    act: () => { speak(pick(WHY_LINES)); } },
-    { re: /\b(what|tell me) about ([a-z0-9][a-z0-9 ]{0,30})/i, act: (m) => { recallAbout(m[2]); } },
-    { re: /\b(who is|who s) (he|she|it|that)\b/i,       act: () => { recallLast(); } },
-    { re: /\bwhat do you remember about (our )?(talks|conversation|chat)\b/i, act: () => { recallNotes(); } }
+    { re: /\b(tell me more|more about (that|this)|and then|go on|continue|aur batao)\b/i, keys: ["tell me more","and then","go on","continue"], act: () => { followUp(); } },
+    { re: /^why\b/i, keys: ["why"], act: () => { speak(pick(WHY_LINES)); } },
+    { caps:true, re: /\b(what|tell me) about ([a-z0-9][a-z0-9 ]{0,30})/i, act: (m) => { recallAbout(m[2]); } },
+    { re: /\b(who is|who s) (he|she|it|that)\b/i, keys: ["who is he","who is she","who is it"], act: () => { recallLast(); } },
+    { re: /\bwhat do you remember about (our )?(talks|conversation|chat)\b/i, keys: ["what do you remember about our talks","what do you remember"], act: () => { recallNotes(); } }
   ];
+  /* ---------- 5.3 — smarter intent (synonyms + fuzzy) ---------- */
+  function lev(a, b){
+    if(a === b) return 0;
+    const m = a.length, n = b.length;
+    if(!m) return n; if(!n) return m;
+    let prev = [], cur = [];
+    for(let j = 0; j <= n; j++) prev[j] = j;
+    for(let i = 1; i <= m; i++){
+      cur[0] = i;
+      for(let j = 1; j <= n; j++){
+        cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+      }
+      prev = cur.slice();
+    }
+    return prev[n];
+  }
+  function wordHit(w, k){
+    if(!w || !k) return 0;
+    if(w === k) return 1;
+    if(w.length >= 3 && k.length >= 3 && Math.abs(w.length - k.length) <= 1 && lev(w, k) <= 1) return 0.8;   /* typo */
+    if(w.length >= 4 && k.length >= 4 && (w.indexOf(k) === 0 || k.indexOf(w) === 0)) return 0.6;             /* prefix */
+    return 0;
+  }
+  function keyScore(keys, t){
+    const ws = t.split(" ").filter(Boolean);
+    let best = 0;
+    for(const k of keys){
+      const ks = String(k).toLowerCase().split(" ").filter(Boolean);
+      if(!ks.length) continue;
+      let hit = 0;
+      for(const kw of ks){
+        let b = 0;
+        for(const w of ws){ const f = wordHit(w, kw); if(f > b) b = f; }
+        hit += b;
+      }
+      const sc = hit / ks.length;
+      if(sc > best) best = sc;
+    }
+    return best;
+  }
+  /* phase 1: exact pattern (purana behaviour). phase 2: synonyms + fuzzy (5.3) */
+  function findIntent(t){
+    for(const c of COMMANDS){ if(c.re.test(t)) return c; }
+    let best = null, bestSc = 0;
+    for(const c of COMMANDS){
+      if(c.caps || !c.keys) continue;                 /* capture wale sirf regex se */
+      const sc = keyScore(c.keys, t);
+      if(sc > bestSc){ bestSc = sc; best = c; }
+    }
+    return (best && bestSc >= 0.8) ? best : null;
+  }
+
   const JOKES = [
     "Why did the robot go to school? To get a little smarter!",
     "What do robots eat? Micro-chips!",
@@ -1307,7 +1376,8 @@
           return;
         }
 
-        for(const c of COMMANDS){ const mm = c.re.exec(t); if(mm){ hit = c; m = mm; break; } }
+        hit = findIntent(t);
+        if(hit) m = hit.re.exec(t);
       }
       if(hit){
         bumpInteraction();
@@ -1542,6 +1612,7 @@
   /* config override: localStorage me "nimu.cloud.config" ho to wahi use karo */
   try{ const c = JSON.parse(localStorage.getItem("nimu.cloud.config") || "null"); if(c && c.url && c.key){ SUPABASE.url = c.url; SUPABASE.key = c.key; } }catch(e){}
   loadSession();
+  loadMute();
   setupAuthUI();
   setupMuteButtons();
   setupMenu();
