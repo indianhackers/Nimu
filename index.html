@@ -550,12 +550,12 @@
   .debug .d-val{ color:#eaf7fb; max-width:76vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
   /* ---------- menu (saare buttons ek jagah) ---------- */
-  .menu-btn{ position:fixed; top:max(2vmin, env(safe-area-inset-top)); right:max(2vmin, env(safe-area-inset-right));
+  .menu-btn{ position:fixed; top:max(2vmin, env(safe-area-inset-top)); left:max(2vmin, env(safe-area-inset-left));
              width:7.4vmin; height:7.4vmin; padding:1.6vmin; z-index:75; color:#cfeef7;
              background:rgba(10,30,40,.55); border:1px solid rgba(160,220,235,.35); border-radius:1.4vmin;
              cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .menu-btn svg{ width:100%; height:100%; display:block; }
-  .menu{ position:fixed; top:calc(max(2vmin, env(safe-area-inset-top)) + 9vmin); right:max(2vmin, env(safe-area-inset-right));
+  .menu{ position:fixed; top:calc(max(2vmin, env(safe-area-inset-top)) + 9vmin); left:max(2vmin, env(safe-area-inset-left));
          z-index:75; display:none; flex-direction:column; gap:1.1vmin; padding:1.4vmin;
          background:rgba(10,30,40,.82); border:1px solid rgba(160,220,235,.3); border-radius:1.6vmin;
          box-shadow:0 .8vmin 3vmin rgba(0,0,0,.45); }
@@ -976,7 +976,7 @@
   const heard = document.getElementById("heard");
   const said  = document.getElementById("said");
   /* status: pehle hi bata do ki mic chalega ya nahi */
-  const APP_VER = "v79";
+  const APP_VER = "v80";
   function proto(){ return (location.protocol || "").replace(":",""); }
   function micStatus(){
     if(!heard) return;
