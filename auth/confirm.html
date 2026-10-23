@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex" />
+<title>Nimu — Confirm email</title>
+<style>
+  :root{ color-scheme: dark; }
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; height:100%; }
+  body{ background:#04141a; color:#cfeef7; display:flex; align-items:center; justify-content:center;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif; padding:6vmin; text-align:center; }
+  .box{ max-width:440px; }
+  .title{ font-weight:700; letter-spacing:.6vmin; font-size:6vmin; color:#8fdff2; margin-bottom:4.5vmin; }
+  .msg{ font-size:3.6vmin; line-height:1.5; }
+  .msg.err{ color:#ffb3a0; }
+  .btn{ display:inline-block; margin-top:5vmin; padding:2.6vmin 4.4vmin; border-radius:2vmin;
+        background:#8fdff2; color:#04141a; font-weight:600; font-size:3.4vmin; text-decoration:none; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="title">NIMU</div>
+    <div class="msg" id="msg">Confirming your email&hellip;</div>
+    <a class="btn" id="go" href="../" style="display:none">Open Nimu</a>
+  </div>
+<script>
+(function(){
+  var q = new URLSearchParams(location.search);
+  var th = q.get("token_hash"), type = q.get("type") || "email", next = q.get("next") || "";
+  var msg = document.getElementById("msg"), go = document.getElementById("go");
+  var base = location.pathname.replace(/\/auth\/confirm\/?$/, "/");   /* -> /Nimu/ */
+  function done(ok, text){
+    msg.textContent = text;
+    if(!ok) msg.className = "msg err";
+    go.style.display = "inline-block";
+    go.href = next || base;
+    if(ok) setTimeout(function(){ location.href = next || base; }, 1800);
+  }
+  if(!th){ done(false, "Ye link adhoora hai (token missing). Nimu me dobara Sign up karo."); return; }
+  var cfg = null;
+  try{ cfg = JSON.parse(localStorage.getItem("nimu.cloud.config") || "null"); }catch(e){}
+  if(!cfg || !cfg.url || !cfg.key){
+    done(false, "Is device par Nimu ka cloud setup nahi mila. Pehle Nimu kholo (?setup=cloud), phir ye link dobara kholo.");
+    return;
+  }
+  fetch(cfg.url + "/auth/v1/verify", {
+    method: "POST",
+    headers: { apikey: cfg.key, "Content-Type": "application/json" },
+    body: JSON.stringify({ type: type, token_hash: th })
+  }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
+    .then(function(res){
+      if(res.ok && res.j && res.j.access_token){
+        try{ localStorage.setItem("nimu.cloud.session.v2", JSON.stringify({
+          access_token: res.j.access_token,
+          refresh_token: res.j.refresh_token,
+          user_id: (res.j.user && res.j.user.id) || null,
+          expires_at: Date.now() + ((res.j.expires_in || 3600) * 1000)
+        })); }catch(e){}
+        done(true, "Email confirmed! Nimu khol rahe hain&hellip;");
+      } else {
+        var e = res.j && (res.j.error_description || res.j.msg || res.j.error);
+        done(false, "Confirm nahi ho paya" + (e ? (": " + e) : "") + ". Link expire ho gaya ho sakta hai \u2014 Nimu me dobara Sign up karo.");
+      }
+    })
+    .catch(function(){ done(false, "Network error. Internet check karke dobara try karo."); });
+})();
+</script>
+</body>
+</html>
