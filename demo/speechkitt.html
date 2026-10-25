@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Nimu Lab — SpeechKITT</title>
+<style>
+  :root{ color-scheme: dark; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#04141a; color:#cfeef7; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; padding:4vmin; }
+  h1{ font-size:5vmin; margin:0 0 1vmin; color:#8fdff2; }
+  .sub{ font-size:3vmin; color:#7fa3b0; margin-bottom:4vmin; }
+  .card{ background:#0a1f27; border:1px solid rgba(160,220,235,.2); border-radius:2vmin; padding:3vmin; }
+  .log{ height:52vh; overflow:auto; font:400 3vmin/1.5 ui-monospace,monospace; margin-top:3vmin; }
+  .log div{ padding:.6vmin 0; border-bottom:1px solid rgba(160,220,235,.08); }
+  .hint{ font-size:2.9vmin; color:#7fa3b0; line-height:1.6; }
+  a{ color:#8fdff2; }
+</style>
+</head>
+<body>
+  <h1>SpeechKITT</h1>
+  <div class="sub">Nimu Lab — mic UI + continuous recognition</div>
+
+  <div class="card">
+    <div class="hint">Neeche ka <b>KITT bar</b> dabao &rarr; bolo. Jo suna, neeche dikhega.</div>
+    <div class="log" id="log"></div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/speechkitt@1.0.0/dist/speechkitt.min.js"></script>
+<script>
+  var logEl = document.getElementById("log");
+  function log(m){ var d = document.createElement("div"); d.textContent = m; logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight; }
+
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    log("\u274c Is browser me SpeechRecognition nahi hai. Chrome / Edge try karo.");
+  } else if(typeof SpeechKITT === "undefined"){
+    log("\u274c SpeechKITT load nahi hua (internet?)");
+  } else {
+    var recognition = new SR();
+    recognition.lang = "en-IN";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    SpeechKITT.setStartCommand(function(){ try{ recognition.start(); }catch(e){} });
+    SpeechKITT.setAbortCommand(function(){ try{ recognition.abort(); }catch(e){} });
+    recognition.addEventListener("start", SpeechKITT.onStart);
+    recognition.addEventListener("end", SpeechKITT.onEnd);
+    SpeechKITT.setStylesheet("https://cdn.jsdelivr.net/npm/speechkitt@1.0.0/dist/themes/flat.css");
+    SpeechKITT.vroom();
+
+    recognition.onresult = function(e){
+      for(var i = e.resultIndex; i < e.results.length; i++){
+        var r = e.results[i];
+        var t = r[0].transcript.trim();
+        if(!t) continue;
+        log((r.isFinal ? "\u2714 " : "\u2026 ") + t);
+      }
+    };
+    recognition.onerror = function(e){ log("error: " + e.error); };
+    log("\u2705 ready — KITT bar dabao");
+  }
+</script>
+</body>
+</html>
