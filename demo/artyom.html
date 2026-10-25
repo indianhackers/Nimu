@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Nimu Lab — artyom.js</title>
+<style>
+  :root{ color-scheme: dark; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#04141a; color:#cfeef7; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; padding:4vmin; }
+  h1{ font-size:5vmin; margin:0 0 1vmin; color:#8fdff2; }
+  .sub{ font-size:3vmin; color:#7fa3b0; margin-bottom:4vmin; }
+  .row{ display:flex; gap:2vmin; flex-wrap:wrap; align-items:center; }
+  button{ font:600 3.4vmin/1 inherit; padding:3vmin 4vmin; border-radius:2vmin; border:1px solid rgba(160,220,235,.35);
+          background:#0d2b36; color:#cfeef7; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  button.primary{ background:#8fdff2; color:#04141a; border-color:#8fdff2; }
+  button.danger{ background:#2a1116; border-color:#ffb3a0; color:#ffb3a0; }
+  input{ flex:1; min-width:55%; font:400 3.4vmin/1 inherit; padding:3vmin; border-radius:2vmin;
+         border:1px solid rgba(160,220,235,.35); background:#0a1f27; color:#cfeef7; }
+  .card{ background:#0a1f27; border:1px solid rgba(160,220,235,.2); border-radius:2vmin; padding:3vmin; margin-bottom:3vmin; }
+  .log{ height:34vh; overflow:auto; font:400 3vmin/1.5 ui-monospace,monospace; white-space:pre-wrap; margin-top:3vmin; }
+  .log div{ padding:.6vmin 0; border-bottom:1px solid rgba(160,220,235,.08); }
+  .hint{ font-size:2.9vmin; color:#7fa3b0; line-height:1.6; }
+  code{ background:#0d2b36; padding:.3vmin 1vmin; border-radius:1vmin; }
+  a{ color:#8fdff2; }
+</style>
+</head>
+<body>
+  <h1>artyom.js</h1>
+  <div class="sub">Nimu Lab — voice commands + soundex + text simulate</div>
+
+  <div class="card">
+    <div class="row">
+      <button class="primary" id="start">&#9654; Start listening</button>
+      <button class="danger" id="stop">&#9632; Stop</button>
+    </div>
+    <div class="hint" style="margin-top:3vmin">
+      Bolo: <code>hello</code> &middot; <code>what is your name</code> &middot; <code>what time is it</code> &middot; <code>stop</code><br>
+      Ya neeche text likh kar <b>Simulate</b> dabao &mdash; <b>bina mic ke bhi</b> chalega.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <input id="sim" placeholder="text command…" autocomplete="off" />
+      <button id="go">Simulate</button>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/artyom.js@1.0.6/build/artyom.window.min.js"></script>
+<script>
+  var logEl = document.getElementById("log");
+  function log(m){ var d = document.createElement("div"); d.textContent = m; logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight; }
+  var J = null;
+
+  function start(){
+    if(J){ log("already running"); return; }
+    if(typeof Artyom === "undefined"){ log("\u274c artyom load nahi hua (internet?)"); return; }
+    J = new Artyom();
+    J.addCommands([
+      { indexes:["hello","hi","hey"], action:function(){ log("\u2192 hello"); J.say("Hi, I am Artyom"); } },
+      { indexes:["what is your name","your name"], action:function(){ log("\u2192 name"); J.say("I am Artyom, a voice library"); } },
+      { indexes:["what time is it","the time"], action:function(){ log("\u2192 time"); J.say("It is " + new Date().toLocaleTimeString()); } },
+      { indexes:["stop","stop listening"], action:function(){ log("\u2192 stop"); J.say("Okay, stopping"); setTimeout(stop, 1200); } }
+    ]);
+    J.initialize(
+      { lang:"en-IN", continuous:true, soundex:true, debug:false, speed:1 },
+      function(){ log("\u2705 ready — bolo ya simulate karo"); },
+      function(err){ log("\u274c mic error: " + err + "  (permission / HTTPS check karo)"); }
+    );
+  }
+  function stop(){ if(!J){ log("not running"); return; } try{ J.fatality(); }catch(e){} J = null; log("\u23f9 stopped"); }
+  function simulate(){
+    var v = document.getElementById("sim").value.trim();
+    if(!v) return;
+    if(!J){ log("pehle \u25b6 Start dabao"); return; }
+    log("\u2328 simulate: " + v);
+    try{ J.simulateInstruction(v); }catch(e){ log("simulate error: " + e.message); }
+  }
+
+  document.getElementById("start").addEventListener("click", start);
+  document.getElementById("stop").addEventListener("click", stop);
+  document.getElementById("go").addEventListener("click", simulate);
+  document.getElementById("sim").addEventListener("keydown", function(e){ if(e.key === "Enter") simulate(); });
+</script>
+</body>
+</html>
