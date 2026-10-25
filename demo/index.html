@@ -3,37 +3,119 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Nimu Lab — demos</title>
+<title>Nimu Lab — sab projects</title>
 <style>
   :root{ color-scheme: dark; }
   *{ box-sizing:border-box; }
-  body{ margin:0; background:#04141a; color:#cfeef7; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; padding:5vmin; }
-  h1{ font-size:6vmin; margin:0 0 1vmin; color:#8fdff2; }
-  .sub{ font-size:3.2vmin; color:#7fa3b0; margin-bottom:5vmin; }
-  a.card{ display:block; text-decoration:none; color:inherit; background:#0a1f27; border:1px solid rgba(160,220,235,.25);
-          border-radius:2.4vmin; padding:4vmin; margin-bottom:3vmin; }
-  a.card:active{ background:#0d2b36; }
-  .t{ font-size:4.2vmin; font-weight:700; color:#8fdff2; margin-bottom:1.2vmin; }
-  .d{ font-size:3vmin; color:#9fc2cd; line-height:1.5; }
-  .note{ font-size:2.9vmin; color:#7fa3b0; line-height:1.6; margin-top:5vmin; }
+  body{ margin:0; background:#04141a; color:#cfeef7; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; padding:4vmin; }
+  h1{ font-size:5.6vmin; margin:0 0 1vmin; color:#8fdff2; }
+  .sub{ font-size:3vmin; color:#7fa3b0; margin-bottom:4vmin; }
+  h2{ font-size:3.6vmin; margin:5vmin 0 2vmin; color:#8fdff2; }
+  a.item{ display:block; text-decoration:none; color:inherit; background:#0a1f27; border:1px solid rgba(160,220,235,.22);
+          border-radius:2vmin; padding:3vmin; margin-bottom:2.2vmin; }
+  a.item:active{ background:#0d2b36; }
+  .t{ font-size:3.6vmin; font-weight:700; color:#cfeef7; }
+  .t .st{ font-size:2.8vmin; color:#7fa3b0; font-weight:400; }
+  .d{ font-size:2.9vmin; color:#9fc2cd; line-height:1.5; margin-top:.8vmin; }
+  .badge{ display:inline-block; font-size:2.4vmin; padding:.5vmin 1.4vmin; border-radius:1vmin; margin-top:1.4vmin; }
+  .go{ background:#8fdff2; color:#04141a; font-weight:700; }
+  .pc{ background:#2a2233; color:#d9c4ff; }
+  .lib{ background:#12252c; color:#8fdff2; }
+  .note{ font-size:2.8vmin; color:#7fa3b0; line-height:1.6; margin-top:5vmin; border-top:1px solid rgba(160,220,235,.15); padding-top:3vmin; }
 </style>
 </head>
 <body>
   <h1>Nimu Lab</h1>
-  <div class="sub">Browser speech libraries — try karo</div>
+  <div class="sub">Research me mile projects — sab ek jagah</div>
 
-  <a class="card" href="artyom.html">
-    <div class="t">artyom.js</div>
-    <div class="d">Voice commands + soundex + <b>text se simulate</b> (bina mic ke bhi chalega).</div>
+  <h2>&#9654; Browser me turant try karo</h2>
+
+  <a class="item" href="artyom.html">
+    <div class="t">artyom.js <span class="st">&#9733;1.3k</span></div>
+    <div class="d">Voice commands + soundex + text se simulate (bina mic ke).</div>
+    <span class="badge go">Demo ready</span>
   </a>
 
-  <a class="card" href="speechkitt.html">
-    <div class="t">SpeechKITT</div>
+  <a class="item" href="speechkitt.html">
+    <div class="t">SpeechKITT <span class="st">&#9733;518</span></div>
     <div class="d">Mic UI (status bar) + continuous recognition.</div>
+    <span class="badge go">Demo ready</span>
+  </a>
+
+  <a class="item" href="https://RealChar.ai/" target="_blank" rel="noopener">
+    <div class="t">RealChar <span class="st">&#9733;6.2k</span></div>
+    <div class="d">Real-time AI character — voice + avatar. Live site par seedha try karo.</div>
+    <span class="badge go">Live site</span>
+  </a>
+
+  <a class="item" href="https://www.agentparty.top" target="_blank" rel="noopener">
+    <div class="t">Super Agent Party <span class="st">&#9733;2.7k</span></div>
+    <div class="d">All-in-one AI companion (VRM/Live2D pet, memory, tools).</div>
+    <span class="badge go">Live site</span>
+  </a>
+
+  <a class="item" href="https://github.com/ccoreilly/vosk-browser" target="_blank" rel="noopener">
+    <div class="t">vosk-browser <span class="st">&#9733;531</span></div>
+    <div class="d">Offline speech recognition (wasm). Repo par <b>Live Demo</b> link hai — 13 languages.</div>
+    <span class="badge go">Demo (repo me)</span>
+  </a>
+
+  <h2>&#128187; Computer par install karo</h2>
+
+  <a class="item" href="https://github.com/morettt/my-neuro" target="_blank" rel="noopener">
+    <div class="t">my-neuro <span class="st">&#9733;1.4k</span></div>
+    <div class="d">AI desktop companion — Live2D, memory, voice clone, emotion. Windows + Python setup.</div>
+    <span class="badge pc">Install needed</span>
+  </a>
+
+  <a class="item" href="https://github.com/andyhuo520/openclaw-assistant-mvp" target="_blank" rel="noopener">
+    <div class="t">openclaw assistant <span class="st">&#9733;408</span></div>
+    <div class="d">Electron voice assistant with Live2D character.</div>
+    <span class="badge pc">Install needed</span>
+  </a>
+
+  <a class="item" href="https://github.com/LIhong42/soul-desktop-pet" target="_blank" rel="noopener">
+    <div class="t">soul-desktop-pet <span class="st">&#9733;14</span></div>
+    <div class="d">Desktop pet with emotion + memory + reminders.</div>
+    <span class="badge pc">Install needed</span>
+  </a>
+
+  <h2>&#128218; Libraries (code me use karo)</h2>
+
+  <a class="item" href="https://github.com/syl22-00/pocketsphinx.js" target="_blank" rel="noopener">
+    <div class="t">pocketsphinx.js <span class="st">&#9733;1.5k</span></div>
+    <div class="d">Offline speech recognition (wasm).</div>
+    <span class="badge lib">Library</span>
+  </a>
+
+  <a class="item" href="https://github.com/zzmp/juliusjs" target="_blank" rel="noopener">
+    <div class="t">juliusjs <span class="st">&#9733;2.5k</span></div>
+    <div class="d">Speech recognition library for the web.</div>
+    <span class="badge lib">Library</span>
+  </a>
+
+  <a class="item" href="https://github.com/JamesBrill/react-speech-recognition" target="_blank" rel="noopener">
+    <div class="t">react-speech-recognition <span class="st">&#9733;841</span></div>
+    <div class="d">Clean React hooks for Web Speech API.</div>
+    <span class="badge lib">Library</span>
+  </a>
+
+  <h2>&#127918; Games (idea ke liye)</h2>
+
+  <a class="item" href="https://github.com/walsh9/yoctopets" target="_blank" rel="noopener">
+    <div class="t">yoctopets <span class="st">&#9733;16</span></div>
+    <div class="d">Tiny virtual pet (js13k) — pet mechanics.</div>
+    <span class="badge lib">Game</span>
+  </a>
+
+  <a class="item" href="https://github.com/danielbrendel/krepagotchi-game" target="_blank" rel="noopener">
+    <div class="t">krepagotchi <span class="st">&#9733;51</span></div>
+    <div class="d">Pixel virtual pet game.</div>
+    <span class="badge lib">Game</span>
   </a>
 
   <div class="note">
-    Mic ke liye <b>HTTPS</b> aur permission chahiye — yahan dono theek hain.<br>
+    Mic wale demos ke liye <b>HTTPS + permission</b> chahiye — yahan dono theek hain.<br>
     Best browser: <b>Chrome</b> (Android) ya Edge.
   </div>
 </body>
