@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Nimu Lab — demos</title>
+<style>
+  :root{ color-scheme: dark; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#04141a; color:#cfeef7; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; padding:5vmin; }
+  h1{ font-size:6vmin; margin:0 0 1vmin; color:#8fdff2; }
+  .sub{ font-size:3.2vmin; color:#7fa3b0; margin-bottom:5vmin; }
+  a.card{ display:block; text-decoration:none; color:inherit; background:#0a1f27; border:1px solid rgba(160,220,235,.25);
+          border-radius:2.4vmin; padding:4vmin; margin-bottom:3vmin; }
+  a.card:active{ background:#0d2b36; }
+  .t{ font-size:4.2vmin; font-weight:700; color:#8fdff2; margin-bottom:1.2vmin; }
+  .d{ font-size:3vmin; color:#9fc2cd; line-height:1.5; }
+  .note{ font-size:2.9vmin; color:#7fa3b0; line-height:1.6; margin-top:5vmin; }
+</style>
+</head>
+<body>
+  <h1>Nimu Lab</h1>
+  <div class="sub">Browser speech libraries — try karo</div>
+
+  <a class="card" href="artyom.html">
+    <div class="t">artyom.js</div>
+    <div class="d">Voice commands + soundex + <b>text se simulate</b> (bina mic ke bhi chalega).</div>
+  </a>
+
+  <a class="card" href="speechkitt.html">
+    <div class="t">SpeechKITT</div>
+    <div class="d">Mic UI (status bar) + continuous recognition.</div>
+  </a>
+
+  <div class="note">
+    Mic ke liye <b>HTTPS</b> aur permission chahiye — yahan dono theek hain.<br>
+    Best browser: <b>Chrome</b> (Android) ya Edge.
+  </div>
+</body>
+</html>
