@@ -1,0 +1,29 @@
+name: Supabase keep-alive
+
+# Supabase free-tier projects PAUSE after 7 days without project activity.
+# This pings the project once a day so it never goes idle.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"      # 03:17 UTC daily (~08:47 IST)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase project
+        env:
+          SB_URL: https://sssmfjwlwiiapkbpomtj.supabase.co
+          SB_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          echo "Auth health:"
+          curl -sS -o /dev/null -w "  HTTP %{http_code}\n" "$SB_URL/auth/v1/health" || true
+          echo "REST (200 ya 401 — dono project activity hain):"
+          curl -sS -o /dev/null -w "  HTTP %{http_code}\n" \
+            "$SB_URL/rest/v1/nimu_memory?select=user_id&limit=1" \
+            -H "apikey: ${SB_KEY}" -H "Authorization: Bearer ${SB_KEY}" || true
+          echo "✅ keep-alive ping done"
